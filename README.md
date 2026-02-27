@@ -2,6 +2,8 @@
 
 专为招聘「AI Agent 管理员」岗位设计的自动化面试机器人，目前支持 Telegram 平台。
 
+[English](README.en.md) · [Landing Page](https://blackman99.github.io/eval-mate/)
+
 面试官通过 Telegram 预约面试，机器人自动完成资料收集、题目设计、面试主持、评估报告全流程，无需人工介入。
 
 ## 功能概览
