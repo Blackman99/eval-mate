@@ -82,6 +82,7 @@ export interface InterviewSummary {
 // In-memory scheduling wizard state
 export interface SchedulingSession {
   step: 'nl_input' | 'name' | 'telegram' | 'datetime' | 'duration' | 'confirm';
+  lang?: string; // locale code for this wizard session
   candidate_name?: string;
   candidate_telegram_username?: string;
   scheduled_time?: number;

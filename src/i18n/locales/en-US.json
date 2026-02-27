@@ -1,0 +1,104 @@
+{
+  "start": {
+    "welcome": "👋 Welcome to the AI Agent Administrator Recruitment Interview Bot!\n\nAvailable commands:\n/schedule — Book an interview\n/begin — Start your interview now\n/status — View current interview status\n/cancel — Cancel a scheduled interview\n/lang — Switch language\n/help — Show help"
+  },
+  "help": {
+    "text": "📖 Help\n\n【Interviewer】\n1. /schedule — Schedule an interview (candidate's Telegram username required)\n   Natural language supported, e.g.: \"John Doe, tomorrow at 3 PM, 45 minutes\"\n2. /status — View all upcoming interviews\n3. /cancel [number] — Cancel an interview\n\n【Candidate】\n4. /begin — Start the interview immediately\n   Use this command once the scheduled time arrives, without waiting for a bot notification\n\n【General】\n5. /lang — Switch the bot language\n\n⏰ Please schedule at least 2 hours in advance so the system can prepare.\n📢 Candidates must send /start to the bot first so it can notify them."
+  },
+  "schedule": {
+    "prompt": "📝 Describe the interview, for example:\n\"John Doe (@johndoe), tomorrow at 3 PM, 45 minutes\"\n\"Book an interview for Jane Smith @janesmith, March 15 at 2:30 PM, one hour\"\n\nSupported: name, Telegram username, time, duration"
+  },
+  "status": {
+    "empty": "No upcoming interviews. Use /schedule to book one.",
+    "header": "📋 Your interviews ({{count}} total)",
+    "item": "\n#{{id}}  Candidate: {{name}} (@{{username}})\n    Time: {{time}}\n    Duration: {{duration}} min\n    Status: {{status_label}}"
+  },
+  "status_labels": {
+    "pending": "⏳ Awaiting research",
+    "researching": "🔍 Gathering materials",
+    "ready": "✅ Ready",
+    "notified": "📢 Awaiting candidate confirmation",
+    "in_progress": "🎤 Interview in progress",
+    "completed": "✔️ Completed",
+    "cancelled": "❌ Cancelled"
+  },
+  "begin": {
+    "no_username": "Your Telegram account has no username. Please set a username in Telegram settings first.",
+    "already_active": "An interview is already in progress. Please continue answering.",
+    "error": "Sorry, an error occurred while starting the interview. Please try again later.",
+    "scheduled": "Your interview ({{name}}) is scheduled for {{time}}. The bot will notify you when it is time.",
+    "not_found": "No upcoming interview found. Please contact the interviewer if you have questions."
+  },
+  "cancel": {
+    "not_found": "Interview not found. Please check the number.",
+    "in_progress": "The interview is currently in progress and cannot be cancelled.",
+    "success": "✅ Interview for {{name}} (#{{id}}) has been cancelled.",
+    "success_no_id": "✅ Interview for {{name}} has been cancelled.",
+    "no_cancellable": "No cancellable interviews found.",
+    "multiple_header": "You have multiple interviews. Use /cancel <number> to cancel a specific one:"
+  },
+  "interview": {
+    "ending": "⏳ Interview finished. Generating evaluation report, please wait...",
+    "reply_error": "Sorry, an error occurred while processing your reply. Please try again later."
+  },
+  "default_reply": "Use /schedule to book an interview, or /help for help.",
+  "wizard": {
+    "ask_name": "What is the candidate's name?",
+    "name_too_short": "Name is too short, please enter again:",
+    "name_ok": "Got it, candidate: {{name}}\n\nPlease enter the candidate's Telegram username (@username format):",
+    "invalid_username": "Invalid username, please enter again (@username format):",
+    "username_ok": "Got it, candidate: {{name}} (@{{username}})\n\nPlease enter the interview time (Beijing Time):\nFormat: YYYY-MM-DD HH:MM\nExample: 2026-03-15 14:30",
+    "invalid_datetime": "Invalid format. Please use YYYY-MM-DD HH:MM, e.g.: 2026-03-15 14:30",
+    "expired_datetime": "Time is invalid or in the past. Please enter a future time:",
+    "datetime_ok": "Interview time: {{time}} (Beijing Time)\n\nPlease enter the interview duration (minutes):\nSuggested: 30, 45, or 60 minutes",
+    "invalid_duration": "Please enter a number between 10 and 120:",
+    "confirm": "📋 Please confirm the interview details:\n\nCandidate: {{name}} (@{{username}})\nTime: {{time}} (Beijing Time)\nDuration: {{duration}} minutes\n\nType \"confirm\" or \"yes\" to book, or anything else to cancel.",
+    "booked": "✅ Interview booked! (ID: #{{id}})\n\nCandidate: {{name}} (@{{username}})\nTime: {{time}}\nDuration: {{duration}} minutes\n\nThe system will automatically gather materials and generate interview questions 2 hours before the interview.\nThe bot will notify the candidate when it is time.",
+    "booking_cancelled": "Booking cancelled. Use /schedule to start over."
+  },
+  "lang": {
+    "choose": "请选择语言 / Choose language:",
+    "changed": "Language changed to English 🇺🇸"
+  },
+  "notify": {
+    "candidate": "🎤 {{name}}, it's time for your interview!\n\nDuration: approximately {{duration}} minutes.\n\nPlease reply with any message or send /begin to start.",
+    "admin": "📢 Interview notification sent to {{name}} (@{{username}}).",
+    "admin_no_start": "⚠️ The candidate has not started the bot yet. Please remind them to send /start first."
+  },
+  "reminder": {
+    "candidate": "⏰ Reminder: {{name}}, your interview starts in approximately {{mins}} minutes.\n\nPlease get ready. The bot will notify you when it starts.",
+    "admin": "⏰ Reminder: {{name}} (@{{username}})'s interview starts in approximately {{mins}} minutes."
+  },
+  "research": {
+    "started": "📚 Gathering materials for {{name}}'s interview, designing interview flow...",
+    "done": "✅ Interview ready! {{count}} questions generated.\nInterview starts at {{time}}. The bot will notify the candidate.",
+    "error": "⚠️ An issue occurred while gathering interview materials. Will retry automatically."
+  },
+  "finish": {
+    "thank_candidate": "Thank you for attending the interview! We will process your results as soon as possible.",
+    "summary_header": "📋 Interview Summary Report",
+    "summary_candidate": "Candidate: {{name}} (@{{username}})",
+    "summary_duration": "Duration: {{duration}} minutes",
+    "summary_recommendation": "🎯 Overall recommendation: {{rec}}",
+    "summary_score": "📊 Overall score: {{score}}/100",
+    "summary_categories_header": "Category scores:",
+    "summary_score_item": "  • {{category}}: {{score}}/25 — {{notes}}",
+    "summary_strengths_header": "✨ Strengths:",
+    "summary_weaknesses_header": "⚠️ Weaknesses:",
+    "summary_assessment_header": "📝 Detailed assessment:",
+    "summary_bullet": "  • {{text}}",
+    "summary_error": "⚠️ Interview #{{id}} ({{name}}) completed, but summary generation failed. Please review the conversation manually.",
+    "rec_labels": {
+      "strong_hire": "✅✅ Strong hire",
+      "hire": "✅ Hire",
+      "no_hire": "❌ No hire",
+      "strong_no_hire": "❌❌ Strong no hire"
+    },
+    "category_labels": {
+      "ai_fundamentals": "AI Fundamentals",
+      "agent_frameworks": "Agent Framework Experience",
+      "system_operations": "System Operations",
+      "business_communication": "Business Communication"
+    }
+  }
+}

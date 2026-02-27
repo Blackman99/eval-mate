@@ -22,6 +22,8 @@ export const config = {
   db: {
     path: process.env.DB_PATH ?? './interviews.db',
   },
+  // Default locale for admin-facing messages (candidate messages use per-user prefs)
+  admin_locale: process.env.ADMIN_LOCALE ?? 'zh-CN',
   interview: {
     default_duration_minutes: 30,
     // Start research when interview is within this many hours

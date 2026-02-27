@@ -13,6 +13,7 @@
     "dotenv": "^16.4.5",
     "grammy": "^1.26.0",
     "https-proxy-agent": "^7.0.6",
+    "i18next": "^25.8.13",
     "node-cron": "^3.0.3",
     "sql.js": "^1.12.0",
     "undici": "^7.22.0"

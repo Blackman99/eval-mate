@@ -10,9 +10,12 @@ import {
   set_research,
   set_summary,
   get_interview,
+  get_user_lang,
 } from './db.js';
 import { run_research } from './researcher.js';
 import { send_opening_message, generate_summary } from './interviewer.js';
+import { t } from './i18n/index.js';
+import { config } from './config.js';
 
 // candidate_telegram_username -> interview_id for interviews currently in progress
 export const active_interviews = new Map<string, number>();
@@ -22,6 +25,26 @@ export const notified_interviews = new Map<string, number>();
 
 // interview_ids that have already received a reminder (in-memory, resets on restart)
 const reminded_interviews = new Set<number>();
+
+// ─── Locale helpers ───────────────────────────────────────────────────────────
+
+/** Candidate locale: use stored preference if available, fall back to zh-CN. */
+function candidate_lang(candidate_telegram_id: string): string {
+  return get_user_lang(candidate_telegram_id) ?? 'zh-CN';
+}
+
+/** Admin locale: configured at deployment level via ADMIN_LOCALE env var. */
+function admin_lang(): string {
+  return config.admin_locale;
+}
+
+/** Format a UTC timestamp for display (always CST timezone). */
+function fmt_time(ts: number, lng: string): string {
+  const locale = lng === 'zh-CN' ? 'zh-CN' : 'en-US';
+  return new Date(ts).toLocaleString(locale, { timeZone: 'Asia/Shanghai' });
+}
+
+// ─── Scheduler ────────────────────────────────────────────────────────────────
 
 export function start_scheduler(bot: Bot): void {
   // Every minute: notify due interviews + send reminders
@@ -63,14 +86,18 @@ async function check_and_notify_interviews(bot: Bot): Promise<void> {
     update_interview_status(interview.id, 'notified');
     notified_interviews.set(key, interview.id);
 
+    const c_lng = candidate_lang(interview.candidate_telegram_id);
+    const a_lng = admin_lang();
+
     // Notify candidate if we have their Telegram ID
     if (interview.candidate_telegram_id) {
       try {
         await bot.api.sendMessage(
           interview.candidate_telegram_id,
-          `🎤 ${interview.candidate_name}，您的面试时间到了！\n\n` +
-          `面试时长约 ${interview.duration_minutes} 分钟。\n\n` +
-          `请回复任意内容或发送 /begin 开始面试。`
+          t('notify.candidate', c_lng, {
+            name: interview.candidate_name,
+            duration: interview.duration_minutes,
+          })
         );
       } catch (err) {
         console.error(`[scheduler] Failed to notify candidate for interview ${interview.id}:`, err);
@@ -82,11 +109,12 @@ async function check_and_notify_interviews(bot: Bot): Promise<void> {
 
     // Always notify admin
     try {
-      await bot.api.sendMessage(
-        interview.telegram_user_id,
-        `📢 面试通知已发送给候选人 ${interview.candidate_name}（@${interview.candidate_telegram_username}）。\n` +
-        (interview.candidate_telegram_id ? '' : `⚠️ 候选人尚未启动机器人，请提醒他们先向机器人发送 /start。`)
-      );
+      const admin_msg = t('notify.admin', a_lng, {
+        name: interview.candidate_name,
+        username: interview.candidate_telegram_username,
+      }) + (interview.candidate_telegram_id ? '' : '\n' + t('notify.admin_no_start', a_lng));
+
+      await bot.api.sendMessage(interview.telegram_user_id, admin_msg);
     } catch { /* admin notification failure is non-critical */ }
   }
 }
@@ -101,13 +129,18 @@ async function check_and_send_reminders(bot: Bot): Promise<void> {
     const mins_left = Math.round((interview.scheduled_time - Date.now()) / 60_000);
     console.log(`[scheduler] Sending reminder for interview ${interview.id}, starts in ~${mins_left} min`);
 
+    const c_lng = candidate_lang(interview.candidate_telegram_id);
+    const a_lng = admin_lang();
+
     // Remind candidate if we have their ID
     if (interview.candidate_telegram_id) {
       try {
         await bot.api.sendMessage(
           interview.candidate_telegram_id,
-          `⏰ 提醒：${interview.candidate_name}，您的面试将在约 ${mins_left} 分钟后开始。\n\n` +
-          `请做好准备，届时机器人会主动通知您。`
+          t('reminder.candidate', c_lng, {
+            name: interview.candidate_name,
+            mins: mins_left,
+          })
         );
       } catch (err) {
         console.error(`[scheduler] Failed to send reminder to candidate for interview ${interview.id}:`, err);
@@ -120,7 +153,11 @@ async function check_and_send_reminders(bot: Bot): Promise<void> {
     try {
       await bot.api.sendMessage(
         interview.telegram_user_id,
-        `⏰ 提醒：${interview.candidate_name}（@${interview.candidate_telegram_username}）的面试将在约 ${mins_left} 分钟后开始。`
+        t('reminder.admin', a_lng, {
+          name: interview.candidate_name,
+          username: interview.candidate_telegram_username,
+          mins: mins_left,
+        })
       );
     } catch { /* non-critical */ }
   }
@@ -157,29 +194,29 @@ async function process_pending_research(bot: Bot): Promise<void> {
     console.log(`[scheduler] Starting research for interview ${interview.id} (${interview.candidate_name})`);
     update_interview_status(interview.id, 'researching');
 
+    const a_lng = admin_lang();
+
     try {
       await bot.api.sendMessage(
         interview.telegram_user_id,
-        `📚 正在为 ${interview.candidate_name} 的面试收集资料，设计面试流程...`
+        t('research.started', a_lng, { name: interview.candidate_name })
       );
 
       const { notes, questions } = await run_research(interview.candidate_name, interview.duration_minutes);
       set_research(interview.id, notes, questions);
       update_interview_status(interview.id, 'ready');
 
-      const scheduled_str = new Date(interview.scheduled_time).toLocaleString('zh-CN', {
-        timeZone: 'Asia/Shanghai',
-      });
+      const scheduled_str = fmt_time(interview.scheduled_time, a_lng);
       await bot.api.sendMessage(
         interview.telegram_user_id,
-        `✅ 面试准备完成！已生成 ${questions.length} 道面试题。\n面试将于 ${scheduled_str} 开始，届时机器人会主动通知候选人。`
+        t('research.done', a_lng, { count: questions.length, time: scheduled_str })
       );
     } catch (err) {
       console.error(`[scheduler] Research failed for interview ${interview.id}:`, err);
       update_interview_status(interview.id, 'pending');
       await bot.api.sendMessage(
         interview.telegram_user_id,
-        `⚠️ 面试资料收集遇到问题，将在下次自动重试。`
+        t('research.error', a_lng)
       ).catch(() => {});
     }
   }
@@ -196,11 +233,14 @@ export async function finish_interview(
   active_interviews.delete(interview.candidate_telegram_username);
   update_interview_status(interview_id, 'completed');
 
+  const c_lng = candidate_lang(interview.candidate_telegram_id);
+  const a_lng = admin_lang();
+
   // Thank the candidate
   if (interview.candidate_telegram_id) {
     await bot.api.sendMessage(
       interview.candidate_telegram_id,
-      '感谢您参加本次面试！我们将尽快处理您的面试结果。'
+      t('finish.thank_candidate', c_lng)
     ).catch(() => {});
   }
 
@@ -209,43 +249,48 @@ export async function finish_interview(
     const summary = await generate_summary(interview_id);
     set_summary(interview_id, summary);
 
-    const rec_labels: Record<string, string> = {
-      strong_hire: '✅✅ 强烈推荐录用',
-      hire: '✅ 推荐录用',
-      no_hire: '❌ 不推荐录用',
-      strong_no_hire: '❌❌ 强烈不推荐录用',
-    };
-
-    const category_labels: Record<string, string> = {
-      ai_fundamentals: 'AI基础知识',
-      agent_frameworks: 'Agent框架经验',
-      system_operations: '系统运维',
-      business_communication: '业务沟通',
-    };
+    const rec_label = t(`finish.rec_labels.${summary.overall_recommendation}`, a_lng);
 
     const scores_text = Object.entries(summary.category_scores)
-      .map(([cat, score]) => `  • ${category_labels[cat] ?? cat}：${score.score}/25 — ${score.notes}`)
+      .map(([cat, score]) =>
+        t('finish.summary_score_item', a_lng, {
+          category: t(`finish.category_labels.${cat}`, a_lng),
+          score: score.score,
+          notes: score.notes,
+        })
+      )
+      .join('\n');
+
+    const strengths_text = summary.strengths
+      .map(s => t('finish.summary_bullet', a_lng, { text: s }))
+      .join('\n');
+
+    const weaknesses_text = summary.weaknesses
+      .map(w => t('finish.summary_bullet', a_lng, { text: w }))
       .join('\n');
 
     const summary_text = [
-      `📋 面试总结报告`,
-      ``,
-      `候选人：${interview.candidate_name}（@${interview.candidate_telegram_username}）`,
-      `面试时长：${interview.duration_minutes} 分钟`,
-      ``,
-      `🎯 综合推荐：${rec_labels[summary.overall_recommendation] ?? summary.overall_recommendation}`,
-      `📊 综合评分：${summary.overall_score}/100`,
-      ``,
-      `各维度评分：`,
+      t('finish.summary_header', a_lng),
+      '',
+      t('finish.summary_candidate', a_lng, {
+        name: interview.candidate_name,
+        username: interview.candidate_telegram_username,
+      }),
+      t('finish.summary_duration', a_lng, { duration: interview.duration_minutes }),
+      '',
+      t('finish.summary_recommendation', a_lng, { rec: rec_label }),
+      t('finish.summary_score', a_lng, { score: summary.overall_score }),
+      '',
+      t('finish.summary_categories_header', a_lng),
       scores_text,
-      ``,
-      `✨ 优势：`,
-      summary.strengths.map(s => `  • ${s}`).join('\n'),
-      ``,
-      `⚠️ 不足：`,
-      summary.weaknesses.map(w => `  • ${w}`).join('\n'),
-      ``,
-      `📝 详细评估：`,
+      '',
+      t('finish.summary_strengths_header', a_lng),
+      strengths_text,
+      '',
+      t('finish.summary_weaknesses_header', a_lng),
+      weaknesses_text,
+      '',
+      t('finish.summary_assessment_header', a_lng),
       summary.detailed_assessment,
     ].join('\n');
 
@@ -255,7 +300,10 @@ export async function finish_interview(
     console.error(`[scheduler] Failed to generate/send summary for interview ${interview_id}:`, err);
     await bot.api.sendMessage(
       admin_chat_id,
-      `⚠️ 面试 #${interview_id}（${interview.candidate_name}）已完成，但总结生成失败，请手动查看对话记录。`
+      t('finish.summary_error', a_lng, {
+        id: interview_id,
+        name: interview.candidate_name,
+      })
     ).catch(() => {});
   }
 }

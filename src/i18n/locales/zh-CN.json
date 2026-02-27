@@ -1,0 +1,104 @@
+{
+  "start": {
+    "welcome": "👋 欢迎使用 AI Agent 管理员招聘面试机器人！\n\n可用命令：\n/schedule — 预约面试时间\n/begin — 主动开始面试\n/status — 查看当前面试状态\n/cancel — 取消待进行的面试\n/lang — 切换语言\n/help — 显示帮助信息"
+  },
+  "help": {
+    "text": "📖 使用说明\n\n【面试官】\n1. /schedule — 预约面试（需填写候选人 Telegram 用户名）\n   支持自然语言，例如：\"张三，明天下午3点，45分钟\"\n2. /status — 查看所有待进行的面试\n3. /cancel [编号] — 取消面试预约\n\n【候选人】\n4. /begin — 主动开始面试\n   到预约时间后可用此命令立即开始，无需等待机器人通知\n\n【通用】\n5. /lang — 切换机器人语言\n\n⏰ 建议提前至少 2 小时预约，以便系统完成资料准备。\n📢 候选人需先向机器人发送 /start，机器人才能主动通知他们。"
+  },
+  "schedule": {
+    "prompt": "📝 请描述面试信息，例如：\n\"张三（@zhangsan），明天下午3点，45分钟\"\n\"帮我预约李四 @lisi 的面试，3月15日14:30，一小时\"\n\n支持识别：姓名、Telegram 用户名、时间、时长"
+  },
+  "status": {
+    "empty": "暂无待进行的面试。使用 /schedule 预约新面试。",
+    "header": "📋 您的面试列表（共 {{count}} 场）",
+    "item": "\n#{{id}}  候选人：{{name}}（@{{username}}）\n    时间：{{time}}\n    时长：{{duration}} 分钟\n    状态：{{status_label}}"
+  },
+  "status_labels": {
+    "pending": "⏳ 等待资料收集",
+    "researching": "🔍 正在收集资料",
+    "ready": "✅ 准备就绪",
+    "notified": "📢 等待候选人确认开始",
+    "in_progress": "🎤 面试进行中",
+    "completed": "✔️ 已完成",
+    "cancelled": "❌ 已取消"
+  },
+  "begin": {
+    "no_username": "您的 Telegram 账号未设置用户名，无法使用此功能。请先在 Telegram 设置中添加用户名。",
+    "already_active": "面试正在进行中，请继续回答问题。",
+    "error": "抱歉，启动面试时遇到了问题，请稍后再试。",
+    "scheduled": "您的面试（{{name}}）预约于 {{time}}，届时机器人会主动通知您。",
+    "not_found": "暂无待进行的面试。如有疑问请联系面试官。"
+  },
+  "cancel": {
+    "not_found": "未找到该面试，请检查编号是否正确。",
+    "in_progress": "面试正在进行中，无法取消。",
+    "success": "✅ 已取消 {{name}} 的面试预约（#{{id}}）。",
+    "success_no_id": "✅ 已取消 {{name}} 的面试预约。",
+    "no_cancellable": "暂无可取消的面试。",
+    "multiple_header": "您有多场待取消的面试，请使用 /cancel <编号> 取消指定面试："
+  },
+  "interview": {
+    "ending": "⏳ 面试已结束，正在生成评估报告，请稍候...",
+    "reply_error": "抱歉，处理您的回复时遇到了问题，请稍后再试。"
+  },
+  "default_reply": "请使用 /schedule 预约面试，或 /help 查看帮助。",
+  "wizard": {
+    "ask_name": "请问候选人叫什么名字？",
+    "name_too_short": "姓名太短，请重新输入：",
+    "name_ok": "好的，候选人：{{name}}\n\n请输入候选人的 Telegram 用户名（@username 格式）：",
+    "invalid_username": "用户名无效，请重新输入（@username 格式）：",
+    "username_ok": "好的，候选人：{{name}}（@{{username}}）\n\n请输入面试时间（北京时间）：\n格式：YYYY-MM-DD HH:MM\n例如：2026-03-15 14:30",
+    "invalid_datetime": "格式不正确，请使用 YYYY-MM-DD HH:MM 格式，例如：2026-03-15 14:30",
+    "expired_datetime": "时间无效或已过期，请输入未来的时间：",
+    "datetime_ok": "面试时间：{{time}}（北京时间）\n\n请输入面试时长（分钟）：\n建议：30、45 或 60 分钟",
+    "invalid_duration": "请输入 10 到 120 之间的分钟数：",
+    "confirm": "📋 请确认面试信息：\n\n候选人：{{name}}（@{{username}}）\n时间：{{time}}（北京时间）\n时长：{{duration}} 分钟\n\n输入 \"确认\" 或 \"yes\" 完成预约，输入其他内容取消。",
+    "booked": "✅ 面试预约成功！（编号：#{{id}}）\n\n候选人：{{name}}（@{{username}}）\n时间：{{time}}\n时长：{{duration}} 分钟\n\n系统将在面试前 2 小时自动收集资料并设计面试题目。\n到预约时间后，机器人会主动通知候选人。",
+    "booking_cancelled": "已取消预约。使用 /schedule 重新开始。"
+  },
+  "lang": {
+    "choose": "请选择语言 / Choose language:",
+    "changed": "语言已切换为中文 🇨🇳"
+  },
+  "notify": {
+    "candidate": "🎤 {{name}}，您的面试时间到了！\n\n面试时长约 {{duration}} 分钟。\n\n请回复任意内容或发送 /begin 开始面试。",
+    "admin": "📢 面试通知已发送给候选人 {{name}}（@{{username}}）。",
+    "admin_no_start": "⚠️ 候选人尚未启动机器人，请提醒他们先向机器人发送 /start。"
+  },
+  "reminder": {
+    "candidate": "⏰ 提醒：{{name}}，您的面试将在约 {{mins}} 分钟后开始。\n\n请做好准备，届时机器人会主动通知您。",
+    "admin": "⏰ 提醒：{{name}}（@{{username}}）的面试将在约 {{mins}} 分钟后开始。"
+  },
+  "research": {
+    "started": "📚 正在为 {{name}} 的面试收集资料，设计面试流程...",
+    "done": "✅ 面试准备完成！已生成 {{count}} 道面试题。\n面试将于 {{time}} 开始，届时机器人会主动通知候选人。",
+    "error": "⚠️ 面试资料收集遇到问题，将在下次自动重试。"
+  },
+  "finish": {
+    "thank_candidate": "感谢您参加本次面试！我们将尽快处理您的面试结果。",
+    "summary_header": "📋 面试总结报告",
+    "summary_candidate": "候选人：{{name}}（@{{username}}）",
+    "summary_duration": "面试时长：{{duration}} 分钟",
+    "summary_recommendation": "🎯 综合推荐：{{rec}}",
+    "summary_score": "📊 综合评分：{{score}}/100",
+    "summary_categories_header": "各维度评分：",
+    "summary_score_item": "  • {{category}}：{{score}}/25 — {{notes}}",
+    "summary_strengths_header": "✨ 优势：",
+    "summary_weaknesses_header": "⚠️ 不足：",
+    "summary_assessment_header": "📝 详细评估：",
+    "summary_bullet": "  • {{text}}",
+    "summary_error": "⚠️ 面试 #{{id}}（{{name}}）已完成，但总结生成失败，请手动查看对话记录。",
+    "rec_labels": {
+      "strong_hire": "✅✅ 强烈推荐录用",
+      "hire": "✅ 推荐录用",
+      "no_hire": "❌ 不推荐录用",
+      "strong_no_hire": "❌❌ 强烈不推荐录用"
+    },
+    "category_labels": {
+      "ai_fundamentals": "AI基础知识",
+      "agent_frameworks": "Agent框架经验",
+      "system_operations": "系统运维",
+      "business_communication": "业务沟通"
+    }
+  }
+}

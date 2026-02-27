@@ -48,6 +48,11 @@ CREATE INDEX IF NOT EXISTS idx_interviews_status    ON interviews(status);
 CREATE INDEX IF NOT EXISTS idx_interviews_scheduled ON interviews(scheduled_time);
 CREATE INDEX IF NOT EXISTS idx_interviews_user      ON interviews(telegram_user_id);
 CREATE INDEX IF NOT EXISTS idx_messages_interview   ON messages(interview_id);
+
+CREATE TABLE IF NOT EXISTS user_prefs (
+  chat_id   TEXT PRIMARY KEY,
+  language  TEXT NOT NULL DEFAULT 'zh-CN'
+);
 `;
 
 export async function init_db(): Promise<void> {
@@ -64,6 +69,8 @@ export async function init_db(): Promise<void> {
   // Migration: add columns for existing databases (no-op on fresh ones)
   try { _db.run("ALTER TABLE interviews ADD COLUMN candidate_telegram_username TEXT NOT NULL DEFAULT ''"); } catch { /* already exists */ }
   try { _db.run("ALTER TABLE interviews ADD COLUMN candidate_telegram_id TEXT NOT NULL DEFAULT ''"); } catch { /* already exists */ }
+  // Migration: create user_prefs table for existing databases
+  try { _db.run("CREATE TABLE IF NOT EXISTS user_prefs (chat_id TEXT PRIMARY KEY, language TEXT NOT NULL DEFAULT 'zh-CN')"); } catch { /* already exists */ }
   persist();
 }
 
@@ -131,12 +138,12 @@ export function create_interview(params: {
   scheduled_time: number;
   duration_minutes: number;
 }): number {
-  run(
+  const row = query_one(
     `INSERT INTO interviews (telegram_user_id, candidate_name, candidate_telegram_username, scheduled_time, duration_minutes)
-     VALUES (?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?) RETURNING id`,
     [params.telegram_user_id, params.candidate_name, params.candidate_telegram_username, params.scheduled_time, params.duration_minutes]
   );
-  const row = query_one('SELECT last_insert_rowid() as id');
+  persist();
   return (row?.id as number) ?? 0;
 }
 
@@ -263,4 +270,20 @@ export function get_interview_by_candidate_username(username: string): Interview
 
 export function set_candidate_telegram_id(id: number, candidate_telegram_id: string): void {
   run('UPDATE interviews SET candidate_telegram_id = ?, updated_at = ? WHERE id = ?', [candidate_telegram_id, Date.now(), id]);
+}
+
+// ─── User language preferences ────────────────────────────────────────────────
+
+/** Returns the stored locale for chat_id, or null if no preference recorded yet. */
+export function get_user_lang(chat_id: string): string | null {
+  const row = query_one('SELECT language FROM user_prefs WHERE chat_id = ?', [chat_id]);
+  return (row?.language as string) ?? null;
+}
+
+/** Persists the locale preference for chat_id. */
+export function set_user_lang(chat_id: string, language: string): void {
+  run(
+    'INSERT INTO user_prefs (chat_id, language) VALUES (?, ?) ON CONFLICT(chat_id) DO UPDATE SET language = excluded.language',
+    [chat_id, language]
+  );
 }
