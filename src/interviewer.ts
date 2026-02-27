@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { config } from './config.js';
-import { get_interview, append_message, get_conversation, set_interview_phase, set_candidate_profile } from './db.js';
+import { get_interview, append_message, get_conversation, set_phase_and_profile } from './db.js';
 import type { Interview, InterviewSummary, InterviewCategory, CandidateProfile } from './types.js';
 
 // Guard against concurrent intro processing per interview
@@ -113,14 +113,20 @@ export async function handle_candidate_reply(
   if (interview.interview_phase === 'intro') {
     // Race condition guard: skip if already processing intro for this interview
     if (_intro_processing.has(interview_id)) {
-      return { response: '', should_end: false };
+      console.warn(`[handle_candidate_reply] Intro already processing for interview ${interview_id}, skipping duplicate`);
+      return { response: '', should_end: false, skipped: true } as { response: string; should_end: boolean };
     }
     _intro_processing.add(interview_id);
 
     try {
-      const profile = await analyze_self_introduction(candidate_message);
-      set_candidate_profile(interview_id, profile);
-      set_interview_phase(interview_id, 'questioning');
+      // Collect all user messages from intro phase (candidate may send multiple messages)
+      const intro_messages = get_conversation(interview_id)
+        .filter(m => m.role === 'user')
+        .map(m => m.content)
+        .join('\n');
+      const profile = await analyze_self_introduction(intro_messages || candidate_message);
+      // Atomic: set profile and phase in a single DB write to avoid inconsistent state on crash
+      set_phase_and_profile(interview_id, 'questioning', profile);
 
       // Reload interview with updated phase and profile
       const updated_interview = get_interview(interview_id);
@@ -135,7 +141,7 @@ export async function handle_candidate_reply(
       append_message(interview_id, 'assistant', response);
 
       const should_end = response.includes('INTERVIEW_COMPLETE') || time_remaining_ms <= 0;
-      return { response: response.replace('INTERVIEW_COMPLETE', '').trim(), should_end };
+      return { response: response.replaceAll('INTERVIEW_COMPLETE', '').trim(), should_end };
     } finally {
       _intro_processing.delete(interview_id);
     }
@@ -148,7 +154,7 @@ export async function handle_candidate_reply(
   append_message(interview_id, 'assistant', response);
 
   const should_end = response.includes('INTERVIEW_COMPLETE') || time_remaining_ms <= 0;
-  return { response: response.replace('INTERVIEW_COMPLETE', '').trim(), should_end };
+  return { response: response.replaceAll('INTERVIEW_COMPLETE', '').trim(), should_end };
 }
 
 async function analyze_self_introduction(intro_text: string): Promise<CandidateProfile> {

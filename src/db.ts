@@ -156,7 +156,10 @@ function parse_interview(row: Record<string, unknown>): Interview {
     scheduled_time: row.scheduled_time as number,
     duration_minutes: row.duration_minutes as number,
     status: row.status as InterviewStatus,
-    interview_phase: ((row.interview_phase as string) ?? 'intro') as InterviewPhase,
+    interview_phase: (() => {
+      const raw = row.interview_phase as string;
+      return raw === 'intro' || raw === 'questioning' ? raw : 'intro';
+    })(),
     candidate_profile: safe_parse_candidate_profile(row.candidate_profile as string | null),
     research_notes: row.research_notes ? JSON.parse(row.research_notes as string) : null,
     interview_questions: row.interview_questions ? JSON.parse(row.interview_questions as string) : null,
@@ -314,6 +317,14 @@ export function set_interview_phase(id: number, phase: InterviewPhase): void {
 
 export function set_candidate_profile(id: number, profile: CandidateProfile): void {
   run('UPDATE interviews SET candidate_profile = ?, updated_at = ? WHERE id = ?', [JSON.stringify(profile), Date.now(), id]);
+}
+
+/** Atomic: set phase and profile in a single DB write to avoid inconsistent state on crash */
+export function set_phase_and_profile(id: number, phase: InterviewPhase, profile: CandidateProfile): void {
+  run(
+    'UPDATE interviews SET interview_phase = ?, candidate_profile = ?, updated_at = ? WHERE id = ?',
+    [phase, JSON.stringify(profile), Date.now(), id]
+  );
 }
 
 
