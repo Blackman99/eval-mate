@@ -8,7 +8,8 @@ const _intro_processing = new Set<number>();
 
 const client = new Anthropic({ apiKey: config.anthropic.api_key, baseURL: config.anthropic.base_url });
 
-function build_interviewer_system_prompt(interview: Interview, time_remaining_ms: number | null): string {
+/** @internal Exported for testing */
+export function build_interviewer_system_prompt(interview: Interview, time_remaining_ms: number | null): string {
   const time_info = time_remaining_ms !== null
     ? `剩余时间：约 ${Math.max(0, Math.round(time_remaining_ms / 60000))} 分钟`
     : '';
@@ -294,7 +295,8 @@ ${conversation_text}
   return extract_summary(response);
 }
 
-function extract_summary(response: Anthropic.Message): InterviewSummary {
+/** @internal Exported for testing */
+export function extract_summary(response: Anthropic.Message): InterviewSummary {
   const text_blocks = (response.content ?? []).filter(b => b.type === 'text');
   const full_text = text_blocks.map(b => (b as Anthropic.TextBlock).text).join('\n');
 

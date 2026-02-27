@@ -38,8 +38,8 @@ function admin_lang(): string {
   return config.admin_locale;
 }
 
-/** Format a UTC timestamp for display (always CST timezone). */
-function fmt_time(ts: number, lng: string): string {
+/** Format a UTC timestamp for display (always CST timezone). @internal Exported for testing */
+export function fmt_time(ts: number, lng: string): string {
   const locale = lng === 'zh-CN' ? 'zh-CN' : 'en-US';
   return new Date(ts).toLocaleString(locale, { timeZone: 'Asia/Shanghai' });
 }

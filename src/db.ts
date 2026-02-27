@@ -124,7 +124,8 @@ function query_one(sql: string, params: any[] = []): Record<string, unknown> | n
   return rows[0] ?? null;
 }
 
-function is_valid_candidate_profile(obj: unknown): obj is CandidateProfile {
+/** @internal Exported for testing */
+export function is_valid_candidate_profile(obj: unknown): obj is CandidateProfile {
   if (!obj || typeof obj !== 'object') return false;
   const o = obj as Record<string, unknown>;
   return Array.isArray(o.tech_stack)
@@ -133,7 +134,8 @@ function is_valid_candidate_profile(obj: unknown): obj is CandidateProfile {
     && Array.isArray(o.suggested_focus_areas);
 }
 
-function safe_parse_candidate_profile(raw: string | null | undefined): CandidateProfile | null {
+/** @internal Exported for testing */
+export function safe_parse_candidate_profile(raw: string | null | undefined): CandidateProfile | null {
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw as string);
