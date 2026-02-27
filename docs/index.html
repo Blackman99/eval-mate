@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Agent 管理员面试助手</title>
+  <meta name="description" content="专为招聘「AI Agent 管理员」岗位设计的自动化面试机器人，支持 Telegram 平台，全程 AI 驱动。" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0f14;
+      --surface: #161a23;
+      --border: #252a36;
+      --accent: #7c6af7;
+      --accent-light: #a89cf8;
+      --text: #e8eaf0;
+      --muted: #8b90a0;
+      --code-bg: #1e2330;
+      --green: #4ade80;
+      --yellow: #fbbf24;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 60px;
+      background: rgba(13,15,20,.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { font-weight: 700; font-size: 1rem; color: var(--accent-light); letter-spacing: .02em; }
+    .nav-links { display: flex; gap: 1.8rem; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: .9rem; transition: color .2s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta {
+      background: var(--accent); color: #fff; border: none; border-radius: 8px;
+      padding: .45rem 1.1rem; font-size: .875rem; font-weight: 600;
+      cursor: pointer; text-decoration: none; transition: opacity .2s;
+    }
+    .nav-cta:hover { opacity: .85; }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      padding: 7rem 1.5rem 5rem;
+      background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124,106,247,.18) 0%, transparent 70%);
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: .4rem;
+      background: rgba(124,106,247,.12); border: 1px solid rgba(124,106,247,.3);
+      color: var(--accent-light); border-radius: 999px;
+      padding: .3rem .9rem; font-size: .8rem; font-weight: 500; margin-bottom: 1.8rem;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 800; line-height: 1.2;
+      background: linear-gradient(135deg, #fff 30%, var(--accent-light));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 1.2rem;
+    }
+    .hero p {
+      font-size: 1.15rem; color: var(--muted); max-width: 560px; margin: 0 auto 2.5rem;
+    }
+    .hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn-primary {
+      background: var(--accent); color: #fff; border: none; border-radius: 10px;
+      padding: .75rem 1.8rem; font-size: 1rem; font-weight: 600;
+      cursor: pointer; text-decoration: none; transition: opacity .2s, transform .15s;
+    }
+    .btn-primary:hover { opacity: .88; transform: translateY(-1px); }
+    .btn-outline {
+      background: transparent; color: var(--text);
+      border: 1px solid var(--border); border-radius: 10px;
+      padding: .75rem 1.8rem; font-size: 1rem; font-weight: 500;
+      cursor: pointer; text-decoration: none; transition: border-color .2s, transform .15s;
+    }
+    .btn-outline:hover { border-color: var(--accent-light); transform: translateY(-1px); }
+
+    /* ── Chat demo ── */
+    .demo-wrap {
+      max-width: 420px; margin: 4rem auto 0;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; overflow: hidden;
+    }
+    .demo-header {
+      display: flex; align-items: center; gap: .7rem;
+      padding: .9rem 1.2rem; border-bottom: 1px solid var(--border);
+      background: var(--code-bg);
+    }
+    .demo-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .9rem;
+    }
+    .demo-name { font-size: .9rem; font-weight: 600; }
+    .demo-status { font-size: .75rem; color: var(--green); }
+    .demo-body { padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: .8rem; }
+    .bubble {
+      max-width: 85%; padding: .6rem .9rem; border-radius: 12px;
+      font-size: .85rem; line-height: 1.5;
+    }
+    .bubble.bot { background: var(--code-bg); align-self: flex-start; border-bottom-left-radius: 4px; }
+    .bubble.user { background: var(--accent); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .bubble .label { font-size: .7rem; color: var(--muted); margin-bottom: .2rem; }
+
+    /* ── Section shared ── */
+    section { padding: 5rem 1.5rem; }
+    .container { max-width: 1080px; margin: 0 auto; }
+    .section-label {
+      font-size: .75rem; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--accent); margin-bottom: .6rem;
+    }
+    .section-title { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 700; margin-bottom: .8rem; }
+    .section-sub { color: var(--muted); max-width: 520px; }
+
+    /* ── Features ── */
+    #features { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .features-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem; margin-top: 3rem;
+    }
+    .feature-card {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 14px;
+      padding: 1.6rem; transition: border-color .2s, transform .2s;
+    }
+    .feature-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+    .feature-icon { font-size: 1.8rem; margin-bottom: .9rem; }
+    .feature-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: .4rem; }
+    .feature-card p { font-size: .875rem; color: var(--muted); }
+
+    /* ── Flow ── */
+    #flow { background: var(--bg); }
+    .flow-steps {
+      display: flex; flex-direction: column; gap: 0; margin-top: 3rem;
+      position: relative;
+    }
+    .flow-steps::before {
+      content: ''; position: absolute; left: 23px; top: 0; bottom: 0;
+      width: 2px; background: linear-gradient(to bottom, var(--accent), transparent);
+    }
+    .flow-step { display: flex; gap: 1.4rem; padding-bottom: 2.2rem; position: relative; }
+    .flow-step:last-child { padding-bottom: 0; }
+    .step-num {
+      flex-shrink: 0; width: 48px; height: 48px; border-radius: 50%;
+      background: var(--surface); border: 2px solid var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: .9rem; color: var(--accent); z-index: 1;
+    }
+    .step-content { padding-top: .6rem; }
+    .step-content h3 { font-size: 1rem; font-weight: 700; margin-bottom: .3rem; }
+    .step-content p { font-size: .875rem; color: var(--muted); }
+
+    /* ── Dimensions ── */
+    #dimensions { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .dim-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.2rem; margin-top: 3rem;
+    }
+    .dim-card {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 14px;
+      padding: 1.4rem;
+    }
+    .dim-tag {
+      display: inline-block; font-size: .7rem; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; padding: .2rem .6rem; border-radius: 6px;
+      margin-bottom: .8rem;
+    }
+    .tag-blue { background: rgba(96,165,250,.15); color: #60a5fa; }
+    .tag-purple { background: rgba(167,139,250,.15); color: #a78bfa; }
+    .tag-green { background: rgba(74,222,128,.15); color: #4ade80; }
+    .tag-yellow { background: rgba(251,191,36,.15); color: #fbbf24; }
+    .dim-card h3 { font-size: .95rem; font-weight: 700; margin-bottom: .4rem; }
+    .dim-card p { font-size: .82rem; color: var(--muted); }
+
+    /* ── Commands ── */
+    #commands { background: var(--bg); }
+    .cmd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 3rem; }
+    .cmd-group { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .cmd-group-header {
+      padding: .9rem 1.2rem; background: var(--code-bg);
+      font-size: .8rem; font-weight: 700; letter-spacing: .06em;
+      text-transform: uppercase; color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .cmd-list { padding: .6rem 0; }
+    .cmd-item { display: flex; align-items: flex-start; gap: .8rem; padding: .7rem 1.2rem; }
+    .cmd-item:hover { background: rgba(255,255,255,.03); }
+    .cmd-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: .85rem; color: var(--accent-light); white-space: nowrap; min-width: 120px; }
+    .cmd-desc { font-size: .85rem; color: var(--muted); }
+
+    /* ── Stack ── */
+    #stack { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .stack-grid { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 2rem; }
+    .stack-pill {
+      display: flex; align-items: center; gap: .5rem;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 999px;
+      padding: .45rem 1rem; font-size: .85rem;
+    }
+    .stack-pill span { color: var(--muted); }
+
+    /* ── Setup ── */
+    #setup { background: var(--bg); }
+    .setup-steps { display: flex; flex-direction: column; gap: 1.5rem; margin-top: 3rem; }
+    .setup-step { display: flex; gap: 1.2rem; }
+    .setup-num {
+      flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: .85rem;
+    }
+    .setup-step h3 { font-size: .95rem; font-weight: 700; margin-bottom: .3rem; }
+    .setup-step p { font-size: .875rem; color: var(--muted); }
+    pre {
+      background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px;
+      padding: 1rem 1.2rem; font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: .82rem; color: #c9d1d9; overflow-x: auto; margin-top: .6rem;
+    }
+    code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: .85em; color: var(--accent-light); }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center; padding: 3rem 1.5rem;
+      border-top: 1px solid var(--border); color: var(--muted); font-size: .85rem;
+    }
+    footer a { color: var(--accent-light); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 640px) {
+      nav { padding: 0 1rem; }
+      .nav-links { display: none; }
+      .flow-steps::before { left: 19px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <span class="nav-logo">🤖 AI 面试助手</span>
+  <div class="nav-links">
+    <a href="#features">功能</a>
+    <a href="#flow">流程</a>
+    <a href="#dimensions">维度</a>
+    <a href="#commands">命令</a>
+    <a href="#setup">部署</a>
+  </div>
+  <a class="nav-cta" href="https://github.com/Vernal-Group/employee-agent" target="_blank">GitHub →</a>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-badge">✨ Powered by Claude Opus 4.6</div>
+  <h1>AI Agent 管理员<br/>自动面试助手</h1>
+  <p>专为招聘「AI Agent 管理员」岗位设计。从预约到评估报告，全程 AI 驱动，无需人工介入。</p>
+  <div class="hero-actions">
+    <a class="btn-primary" href="#setup">快速部署</a>
+    <a class="btn-outline" href="https://github.com/Vernal-Group/employee-agent" target="_blank">查看源码</a>
+  </div>
+
+  <!-- Chat demo -->
+  <div class="demo-wrap">
+    <div class="demo-header">
+      <div class="demo-avatar">🤖</div>
+      <div>
+        <div class="demo-name">面试助手</div>
+        <div class="demo-status">● 在线</div>
+      </div>
+    </div>
+    <div class="demo-body">
+      <div class="bubble bot">
+        <div class="label">面试助手</div>
+        您好，张三！您的面试时间到了。<br/>
+        本次面试时长约 45 分钟，请回复任意内容开始。
+      </div>
+      <div class="bubble user">好的，我准备好了</div>
+      <div class="bubble bot">
+        <div class="label">面试助手</div>
+        很好！第一题：请解释 RAG 的工作原理，以及在什么场景下会选择使用它？
+      </div>
+      <div class="bubble user">RAG 是检索增强生成，通过向量数据库...</div>
+      <div class="bubble bot">
+        <div class="label">面试助手</div>
+        回答不错！追问：如何评估 RAG 系统的检索质量？
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section id="features">
+  <div class="container">
+    <div class="section-label">核心功能</div>
+    <h2 class="section-title">从预约到报告，全自动</h2>
+    <p class="section-sub">面试官只需预约一次，其余全部交给 AI。</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>自然语言预约</h3>
+        <p>直接描述面试信息，Claude 自动提取候选人、时间、时长，无需填表单。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔍</div>
+        <h3>自动资料收集</h3>
+        <p>面试前 2 小时，机器人搜索 AI Agent 领域最新动态，生成定制化题目。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎤</div>
+        <h3>全程自动面试</h3>
+        <p>候选人通过 Telegram 对话完成面试，支持追问和动态调整难度。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>智能评估报告</h3>
+        <p>面试结束后自动生成结构化报告，含各维度评分和录用建议。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⏰</div>
+        <h3>自动提醒通知</h3>
+        <p>面试前 15 分钟提醒候选人，到时间自动发起面试，无需手动操作。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <h3>身份验证</h3>
+        <p>通过 Telegram 用户名绑定候选人，确保只有指定候选人可参与面试。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Flow -->
+<section id="flow">
+  <div class="container">
+    <div class="section-label">工作流程</div>
+    <h2 class="section-title">六步完成一场面试</h2>
+    <p class="section-sub">面试官只需完成第一步，其余由系统自动推进。</p>
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>面试官预约</h3>
+          <p>发送 <code>/schedule 张三 @zhangsan，明天下午3点，45分钟</code>，Claude 解析并确认。</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>自动资料收集</h3>
+          <p>面试前 2 小时，系统搜索 AI Agent 领域最新资料，生成针对性面试题目。</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>提醒候选人</h3>
+          <p>面试前 15 分钟自动发送提醒，到时间发送开始通知。</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h3>候选人开始面试</h3>
+          <p>候选人回复任意内容或发送 <code>/begin</code>，面试正式开始。</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <h3>AI 主持面试</h3>
+          <p>Claude 按题目顺序提问，根据回答动态追问，全程对话式进行。</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">6</div>
+        <div class="step-content">
+          <h3>生成评估报告</h3>
+          <p>面试结束后自动生成报告，含综合评分、各维度分析和录用建议，发送给面试官。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Dimensions -->
+<section id="dimensions">
+  <div class="container">
+    <div class="section-label">面试维度</div>
+    <h2 class="section-title">四个维度，全面评估</h2>
+    <p class="section-sub">针对 AI Agent 管理员岗位设计，覆盖技术与业务能力。</p>
+    <div class="dim-grid">
+      <div class="dim-card">
+        <span class="dim-tag tag-blue">AI 基础知识</span>
+        <h3>LLM 与 AI 原理</h3>
+        <p>模型原理、Prompt 工程、RAG、幻觉处理、微调方法（LoRA、RLHF）</p>
+      </div>
+      <div class="dim-card">
+        <span class="dim-tag tag-purple">Agent 框架</span>
+        <h3>框架实践经验</h3>
+        <p>LangChain、AutoGen、CrewAI、Claude SDK、LlamaIndex 等框架的实际使用经验</p>
+      </div>
+      <div class="dim-card">
+        <span class="dim-tag tag-green">系统运维</span>
+        <h3>生产环境能力</h3>
+        <p>LLM 部署、监控指标、日志系统、故障排查、灾备与降级方案</p>
+      </div>
+      <div class="dim-card">
+        <span class="dim-tag tag-yellow">业务沟通</span>
+        <h3>跨团队协作</h3>
+        <p>需求分析、跨团队协作、ROI 评估、技术决策推动与管理层汇报</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Commands -->
+<section id="commands">
+  <div class="container">
+    <div class="section-label">Bot 命令</div>
+    <h2 class="section-title">简洁的命令体系</h2>
+    <p class="section-sub">面试官和候选人各有专属命令，职责清晰。</p>
+    <div class="cmd-grid">
+      <div class="cmd-group">
+        <div class="cmd-group-header">👔 面试官</div>
+        <div class="cmd-list">
+          <div class="cmd-item">
+            <span class="cmd-name">/schedule</span>
+            <span class="cmd-desc">预约面试，支持自然语言输入</span>
+          </div>
+          <div class="cmd-item">
+            <span class="cmd-name">/status</span>
+            <span class="cmd-desc">查看所有待进行的面试列表</span>
+          </div>
+          <div class="cmd-item">
+            <span class="cmd-name">/cancel [编号]</span>
+            <span class="cmd-desc">取消指定面试预约</span>
+          </div>
+          <div class="cmd-item">
+            <span class="cmd-name">/help</span>
+            <span class="cmd-desc">查看完整使用说明</span>
+          </div>
+        </div>
+      </div>
+      <div class="cmd-group">
+        <div class="cmd-group-header">🙋 候选人</div>
+        <div class="cmd-list">
+          <div class="cmd-item">
+            <span class="cmd-name">/start</span>
+            <span class="cmd-desc">注册账号（必须，否则无法收到通知）</span>
+          </div>
+          <div class="cmd-item">
+            <span class="cmd-name">/begin</span>
+            <span class="cmd-desc">主动开始面试（到预约时间后可用）</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stack -->
+<section id="stack">
+  <div class="container">
+    <div class="section-label">技术栈</div>
+    <h2 class="section-title">现代化技术选型</h2>
+    <div class="stack-grid">
+      <div class="stack-pill">🤖 <span>Claude Opus 4.6</span></div>
+      <div class="stack-pill">✈️ <span>grammY (Telegram)</span></div>
+      <div class="stack-pill">🗄️ <span>sql.js (SQLite)</span></div>
+      <div class="stack-pill">⏱️ <span>node-cron</span></div>
+      <div class="stack-pill">🔷 <span>TypeScript + ESM</span></div>
+      <div class="stack-pill">🌐 <span>Web Search Tool</span></div>
+      <div class="stack-pill">🧠 <span>Extended Thinking</span></div>
+      <div class="stack-pill">📦 <span>Node.js 20+</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- Setup -->
+<section id="setup">
+  <div class="container">
+    <div class="section-label">快速部署</div>
+    <h2 class="section-title">三步启动</h2>
+    <div class="setup-steps">
+      <div class="setup-step">
+        <div class="setup-num">1</div>
+        <div>
+          <h3>克隆并安装依赖</h3>
+          <pre>git clone https://github.com/Vernal-Group/employee-agent.git
+cd employee-agent
+npm install</pre>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="setup-num">2</div>
+        <div>
+          <h3>配置环境变量</h3>
+          <p>复制模板并填入实际值：</p>
+          <pre>cp .env.example .env.local</pre>
+          <pre>TELEGRAM_BOT_TOKEN=your_bot_token_here
+TELEGRAM_ADMIN_CHAT_ID=your_admin_chat_id_here
+ANTHROPIC_API_KEY=your_anthropic_api_key_here</pre>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="setup-num">3</div>
+        <div>
+          <h3>启动机器人</h3>
+          <pre># 开发模式
+npm run dev
+
+# 生产模式
+npm run build && npm start</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <p>
+    <a href="https://github.com/Vernal-Group/employee-agent" target="_blank">GitHub</a>
+    &nbsp;·&nbsp;
+    Built with <a href="https://www.anthropic.com/" target="_blank">Claude</a>
+    &nbsp;·&nbsp;
+    <a href="https://grammy.dev/" target="_blank">grammY</a>
+  </p>
+  <p style="margin-top:.5rem; color: #555;">© 2025 Vernal Group</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "name": "employee-agent",
+  "version": "1.0.0",
+  "description": "AI Agent Administrator Interview Bot",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/bot.ts",
+    "build": "tsc",
+    "start": "node dist/bot.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
+    "dotenv": "^16.4.5",
+    "grammy": "^1.26.0",
+    "https-proxy-agent": "^7.0.6",
+    "node-cron": "^3.0.3",
+    "sql.js": "^1.12.0",
+    "undici": "^7.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/node-cron": "^3.0.11",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}
