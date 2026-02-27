@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS interviews (
   interview_questions          TEXT,
   conversation_history         TEXT,
   summary                      TEXT,
+  interview_phase              TEXT    NOT NULL DEFAULT 'intro',
+  candidate_profile            TEXT,
   created_at                   INTEGER NOT NULL DEFAULT (CAST(strftime('%s','now') AS INTEGER) * 1000),
   updated_at                   INTEGER NOT NULL DEFAULT (CAST(strftime('%s','now') AS INTEGER) * 1000)
 );
@@ -74,7 +76,12 @@ export async function init_db(): Promise<void> {
   // Migration: create user_prefs table for existing databases
   try { _db.run("CREATE TABLE IF NOT EXISTS user_prefs (chat_id TEXT PRIMARY KEY, language TEXT NOT NULL DEFAULT 'zh-CN')"); } catch { /* already exists */ }
   // Migration: add interview phase and candidate profile columns
-  try { _db.run("ALTER TABLE interviews ADD COLUMN interview_phase TEXT NOT NULL DEFAULT 'intro'"); } catch { /* already exists */ }
+  // Default to 'questioning' for existing records (they've already passed the intro stage)
+  try {
+    _db.run("ALTER TABLE interviews ADD COLUMN interview_phase TEXT NOT NULL DEFAULT 'questioning'");
+    // Only new interviews (status='notified') that haven't started yet should be 'intro'
+    _db.run("UPDATE interviews SET interview_phase = 'intro' WHERE status IN ('pending', 'researching', 'ready', 'notified')");
+  } catch { /* already exists */ }
   try { _db.run("ALTER TABLE interviews ADD COLUMN candidate_profile TEXT"); } catch { /* already exists */ }
   persist();
 }
@@ -117,6 +124,28 @@ function query_one(sql: string, params: any[] = []): Record<string, unknown> | n
   return rows[0] ?? null;
 }
 
+function is_valid_candidate_profile(obj: unknown): obj is CandidateProfile {
+  if (!obj || typeof obj !== 'object') return false;
+  const o = obj as Record<string, unknown>;
+  return Array.isArray(o.tech_stack)
+    && (o.years_of_experience === null || typeof o.years_of_experience === 'number')
+    && Array.isArray(o.project_highlights)
+    && Array.isArray(o.suggested_focus_areas);
+}
+
+function safe_parse_candidate_profile(raw: string | null | undefined): CandidateProfile | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw as string);
+    if (is_valid_candidate_profile(parsed)) return parsed;
+    console.error('[db] Invalid candidate_profile structure:', parsed);
+    return null;
+  } catch (err) {
+    console.error('[db] Failed to parse candidate_profile JSON:', err);
+    return null;
+  }
+}
+
 function parse_interview(row: Record<string, unknown>): Interview {
   return {
     id: row.id as number,
@@ -128,7 +157,7 @@ function parse_interview(row: Record<string, unknown>): Interview {
     duration_minutes: row.duration_minutes as number,
     status: row.status as InterviewStatus,
     interview_phase: ((row.interview_phase as string) ?? 'intro') as InterviewPhase,
-    candidate_profile: row.candidate_profile ? JSON.parse(row.candidate_profile as string) : null,
+    candidate_profile: safe_parse_candidate_profile(row.candidate_profile as string | null),
     research_notes: row.research_notes ? JSON.parse(row.research_notes as string) : null,
     interview_questions: row.interview_questions ? JSON.parse(row.interview_questions as string) : null,
     conversation_history: row.conversation_history ? JSON.parse(row.conversation_history as string) : null,
@@ -287,10 +316,6 @@ export function set_candidate_profile(id: number, profile: CandidateProfile): vo
   run('UPDATE interviews SET candidate_profile = ?, updated_at = ? WHERE id = ?', [JSON.stringify(profile), Date.now(), id]);
 }
 
-export function get_candidate_profile(id: number): CandidateProfile | null {
-  const interview = get_interview(id);
-  return interview?.candidate_profile ?? null;
-}
 
 // ─── User language preferences ────────────────────────────────────────────────
 

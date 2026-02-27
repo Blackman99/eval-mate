@@ -3,6 +3,9 @@ import { config } from './config.js';
 import { get_interview, append_message, get_conversation, set_interview_phase, set_candidate_profile } from './db.js';
 import type { Interview, InterviewSummary, InterviewCategory, CandidateProfile } from './types.js';
 
+// Guard against concurrent intro processing per interview
+const _intro_processing = new Set<number>();
+
 const client = new Anthropic({ apiKey: config.anthropic.api_key, baseURL: config.anthropic.base_url });
 
 function build_interviewer_system_prompt(interview: Interview, time_remaining_ms: number | null): string {
@@ -18,6 +21,8 @@ function build_interviewer_system_prompt(interview: Interview, time_remaining_ms
     ? `研究背景：\n${interview.research_notes.summary}`
     : '';
 
+  // Intro phase: no questions injected — we only need the candidate's self-introduction at this stage.
+  // Questions will be included in the questioning phase prompt after profile analysis.
   if (interview.interview_phase === 'intro') {
     return `你是一位专业的技术面试官，正在对候选人进行"AI Agent 管理员"职位的面试。
 
@@ -106,22 +111,34 @@ export async function handle_candidate_reply(
 
   // If still in intro phase, analyze the self-introduction and transition
   if (interview.interview_phase === 'intro') {
-    const profile = await analyze_self_introduction(interview_id, candidate_message);
-    set_candidate_profile(interview_id, profile);
-    set_interview_phase(interview_id, 'questioning');
+    // Race condition guard: skip if already processing intro for this interview
+    if (_intro_processing.has(interview_id)) {
+      return { response: '', should_end: false };
+    }
+    _intro_processing.add(interview_id);
 
-    // Reload interview with updated phase and profile
-    const updated_interview = get_interview(interview_id);
-    if (!updated_interview) throw new Error(`Interview ${interview_id} not found`);
+    try {
+      const profile = await analyze_self_introduction(candidate_message);
+      set_candidate_profile(interview_id, profile);
+      set_interview_phase(interview_id, 'questioning');
 
-    const elapsed_ms = Date.now() - updated_interview.scheduled_time;
-    const time_remaining_ms = updated_interview.duration_minutes * 60_000 - elapsed_ms;
+      // Reload interview with updated phase and profile
+      const updated_interview = get_interview(interview_id);
+      if (!updated_interview) throw new Error(`Interview ${interview_id} not found`);
 
-    const response = await generate_interviewer_turn(updated_interview, time_remaining_ms);
-    append_message(interview_id, 'assistant', response);
+      const elapsed_ms = Date.now() - updated_interview.scheduled_time;
+      const time_remaining_ms = updated_interview.duration_minutes * 60_000 - elapsed_ms;
 
-    const should_end = response.includes('INTERVIEW_COMPLETE') || time_remaining_ms <= 0;
-    return { response: response.replace('INTERVIEW_COMPLETE', '').trim(), should_end };
+      // Inject explicit transition trigger so the AI acknowledges the intro
+      const transition_trigger = '[系统提示：候选人已完成自我介绍，请根据候选人背景开始正式提问。先简短过渡（如"感谢您的介绍，接下来我们开始正式面试"），然后从第一个问题开始。]';
+      const response = await generate_interviewer_turn(updated_interview, time_remaining_ms, transition_trigger);
+      append_message(interview_id, 'assistant', response);
+
+      const should_end = response.includes('INTERVIEW_COMPLETE') || time_remaining_ms <= 0;
+      return { response: response.replace('INTERVIEW_COMPLETE', '').trim(), should_end };
+    } finally {
+      _intro_processing.delete(interview_id);
+    }
   }
 
   const elapsed_ms = Date.now() - interview.scheduled_time;
@@ -134,7 +151,7 @@ export async function handle_candidate_reply(
   return { response: response.replace('INTERVIEW_COMPLETE', '').trim(), should_end };
 }
 
-async function analyze_self_introduction(interview_id: number, intro_text: string): Promise<CandidateProfile> {
+async function analyze_self_introduction(intro_text: string): Promise<CandidateProfile> {
   const response = await client.messages.create({
     model: config.anthropic.model,
     max_tokens: 1000,
@@ -168,8 +185,8 @@ ${intro_text}
   if (json_match) {
     try {
       return JSON.parse(json_match[0]) as CandidateProfile;
-    } catch {
-      // fall through to default
+    } catch (err) {
+      console.error('[analyze_self_introduction] Failed to parse profile JSON:', err, 'Raw text:', full_text);
     }
   }
 
@@ -184,6 +201,7 @@ ${intro_text}
 async function generate_interviewer_turn(
   interview: Interview,
   time_remaining_ms: number | null,
+  inject_trigger?: string,
 ): Promise<string> {
   const history = get_conversation(interview.id);
 
@@ -192,11 +210,12 @@ async function generate_interviewer_turn(
     content: m.content,
   }));
 
-  // First turn: inject a trigger message
-  if (messages.length === 0) {
-    const trigger = interview.interview_phase === 'intro'
-      ? '[系统提示：面试时间到，请开始面试。做简短自我介绍，说明面试职位和流程，然后请候选人做自我介绍。]'
-      : '[系统提示：候选人已完成自我介绍，请根据候选人背景开始正式提问。先简短过渡（如"感谢您的介绍，接下来我们开始正式面试"），然后从第一个问题开始。]';
+  // Inject trigger message: either explicit (for phase transitions) or default (for first turn)
+  if (inject_trigger) {
+    messages.push({ role: 'user', content: inject_trigger });
+  } else if (messages.length === 0) {
+    // First turn in intro phase: prompt the interviewer to start
+    const trigger = '[系统提示：面试时间到，请开始面试。做简短自我介绍，说明面试职位和流程，然后请候选人做自我介绍。]';
     messages.push({ role: 'user', content: trigger });
   }
 
@@ -204,7 +223,7 @@ async function generate_interviewer_turn(
 
   const stream = client.messages.stream({
     model: config.anthropic.model,
-    max_tokens: 1500,
+    max_tokens: 16000,
     thinking: { type: 'adaptive' },
     system: build_interviewer_system_prompt(interview, time_remaining_ms),
     messages,
