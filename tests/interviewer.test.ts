@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 
 // Mock config
-vi.mock('./config.js', () => ({
+vi.mock('../src/config.js', () => ({
   config: {
     anthropic: { api_key: 'test', base_url: 'http://localhost', model: 'test-model' },
     telegram: { bot_token: 'test', admin_chat_id: 'test' },
@@ -22,7 +22,7 @@ vi.mock('@anthropic-ai/sdk', () => ({
 }));
 
 // Mock db module
-vi.mock('./db.js', () => ({
+vi.mock('../src/db.js', () => ({
   get_interview: vi.fn(),
   append_message: vi.fn(),
   get_conversation: vi.fn(() => []),
@@ -30,8 +30,8 @@ vi.mock('./db.js', () => ({
   get_db: vi.fn(),
 }));
 
-import { build_interviewer_system_prompt, extract_summary } from './interviewer.js';
-import type { Interview, InterviewSummary, CandidateProfile } from './types.js';
+import { build_interviewer_system_prompt, extract_summary } from '../src/interviewer.js';
+import type { Interview, InterviewSummary, CandidateProfile } from '../src/types.js';
 import type Anthropic from '@anthropic-ai/sdk';
 
 function makeInterview(overrides: Partial<Interview> = {}): Interview {

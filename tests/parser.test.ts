@@ -6,7 +6,7 @@ const { mockCreate } = vi.hoisted(() => ({
 }));
 
 // Mock config
-vi.mock('./config.js', () => ({
+vi.mock('../src/config.js', () => ({
   config: {
     anthropic: { api_key: 'test', base_url: 'http://localhost', model: 'test-model' },
     telegram: { bot_token: 'test', admin_chat_id: 'test' },
@@ -23,7 +23,7 @@ vi.mock('@anthropic-ai/sdk', () => ({
   },
 }));
 
-import { parse_schedule_request } from './parser.js';
+import { parse_schedule_request } from '../src/parser.js';
 
 function makeResponse(text: string) {
   return { content: [{ type: 'text', text }] };

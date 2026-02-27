@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 
 // Mock config
-vi.mock('./config.js', () => ({
+vi.mock('../src/config.js', () => ({
   config: {
     anthropic: { api_key: 'test', base_url: 'http://localhost', model: 'test-model' },
     telegram: { bot_token: 'test', admin_chat_id: 'test' },
@@ -12,19 +12,19 @@ vi.mock('./config.js', () => ({
 }));
 
 // Mock db module (scheduler imports it)
-vi.mock('./db.js', () => ({
+vi.mock('../src/db.js', () => ({
   get_due_interviews: vi.fn(() => []),
   get_pending_for_research: vi.fn(() => []),
   update_interview_status: vi.fn(),
 }));
 
 // Mock researcher
-vi.mock('./researcher.js', () => ({
+vi.mock('../src/researcher.js', () => ({
   research_candidate: vi.fn(),
 }));
 
 // Mock interviewer
-vi.mock('./interviewer.js', () => ({
+vi.mock('../src/interviewer.js', () => ({
   send_opening_message: vi.fn(),
 }));
 
@@ -36,12 +36,12 @@ vi.mock('grammy', () => ({
 }));
 
 // Mock i18n
-vi.mock('./i18n/index.js', () => ({
+vi.mock('../src/i18n/index.js', () => ({
   t: vi.fn((_key: string, _lng: string, _vars?: Record<string, unknown>) => 'mocked'),
   SUPPORTED_LANGS: ['zh-CN', 'en-US'],
 }));
 
-import { fmt_time } from './scheduler.js';
+import { fmt_time } from '../src/scheduler.js';
 
 describe('fmt_time', () => {
   it('should format timestamp in zh-CN locale', () => {

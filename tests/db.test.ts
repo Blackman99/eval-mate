@@ -4,7 +4,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 
 // vi.mock is hoisted — factory must be self-contained (no external refs)
-vi.mock('./config.js', async () => {
+vi.mock('../src/config.js', async () => {
   const os = await import('os');
   const path = await import('path');
   return {
@@ -16,127 +16,6 @@ vi.mock('./config.js', async () => {
       admin_locale: 'zh-CN',
     },
   };
-
-  describe('is_valid_candidate_profile', () => {
-    it('should accept valid profile', () => {
-      expect(is_valid_candidate_profile({
-        tech_stack: ['Python'],
-        years_of_experience: 3,
-        project_highlights: ['RAG'],
-        suggested_focus_areas: ['ai_fundamentals'],
-      })).toBe(true);
-    });
-
-    it('should accept null years_of_experience', () => {
-      expect(is_valid_candidate_profile({
-        tech_stack: [],
-        years_of_experience: null,
-        project_highlights: [],
-        suggested_focus_areas: [],
-      })).toBe(true);
-    });
-
-    it('should reject null', () => {
-      expect(is_valid_candidate_profile(null)).toBe(false);
-    });
-
-    it('should reject undefined', () => {
-      expect(is_valid_candidate_profile(undefined)).toBe(false);
-    });
-
-    it('should reject non-object', () => {
-      expect(is_valid_candidate_profile('string')).toBe(false);
-      expect(is_valid_candidate_profile(42)).toBe(false);
-    });
-
-    it('should reject missing tech_stack', () => {
-      expect(is_valid_candidate_profile({
-        years_of_experience: 3,
-        project_highlights: [],
-        suggested_focus_areas: [],
-      })).toBe(false);
-    });
-
-    it('should reject non-array tech_stack', () => {
-      expect(is_valid_candidate_profile({
-        tech_stack: 'Python',
-        years_of_experience: 3,
-        project_highlights: [],
-        suggested_focus_areas: [],
-      })).toBe(false);
-    });
-
-    it('should reject string years_of_experience', () => {
-      expect(is_valid_candidate_profile({
-        tech_stack: [],
-        years_of_experience: '3',
-        project_highlights: [],
-        suggested_focus_areas: [],
-      })).toBe(false);
-    });
-
-    it('should reject missing project_highlights', () => {
-      expect(is_valid_candidate_profile({
-        tech_stack: [],
-        years_of_experience: null,
-        suggested_focus_areas: [],
-      })).toBe(false);
-    });
-
-    it('should reject missing suggested_focus_areas', () => {
-      expect(is_valid_candidate_profile({
-        tech_stack: [],
-        years_of_experience: null,
-        project_highlights: [],
-      })).toBe(false);
-    });
-  });
-
-  describe('safe_parse_candidate_profile', () => {
-    it('should parse valid JSON profile', () => {
-      const profile = safe_parse_candidate_profile(JSON.stringify({
-        tech_stack: ['TypeScript'],
-        years_of_experience: 5,
-        project_highlights: ['Built eval-mate'],
-        suggested_focus_areas: ['agent_frameworks'],
-      }));
-      expect(profile).not.toBeNull();
-      expect(profile!.tech_stack).toEqual(['TypeScript']);
-    });
-
-    it('should return null for null input', () => {
-      expect(safe_parse_candidate_profile(null)).toBeNull();
-    });
-
-    it('should return null for undefined input', () => {
-      expect(safe_parse_candidate_profile(undefined)).toBeNull();
-    });
-
-    it('should return null for empty string', () => {
-      expect(safe_parse_candidate_profile('')).toBeNull();
-    });
-
-    it('should return null for invalid JSON', () => {
-      expect(safe_parse_candidate_profile('not json')).toBeNull();
-    });
-
-    it('should return null for valid JSON with wrong structure', () => {
-      expect(safe_parse_candidate_profile('{"foo":"bar"}')).toBeNull();
-    });
-
-    it('should return null for array JSON', () => {
-      expect(safe_parse_candidate_profile('[1,2,3]')).toBeNull();
-    });
-
-    it('should return null for JSON with wrong types', () => {
-      expect(safe_parse_candidate_profile(JSON.stringify({
-        tech_stack: 'not an array',
-        years_of_experience: 3,
-        project_highlights: [],
-        suggested_focus_areas: [],
-      }))).toBeNull();
-    });
-  });
 });
 
 const TEST_DB_PATH = join(tmpdir(), 'test-eval-mate.db');
@@ -164,8 +43,8 @@ import {
   get_db,
   is_valid_candidate_profile,
   safe_parse_candidate_profile,
-} from './db.js';
-import type { CandidateProfile, ResearchNotes, Question, InterviewSummary } from './types.js';
+} from '../src/db.js';
+import type { CandidateProfile, ResearchNotes, Question, InterviewSummary } from '../src/types.js';
 
 describe('Database', () => {
   beforeEach(async () => {
