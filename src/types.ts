@@ -7,6 +7,8 @@ export type InterviewStatus =
   | 'completed'
   | 'cancelled';
 
+export type InterviewPhase = 'intro' | 'questioning';
+
 export type InterviewCategory =
   | 'ai_fundamentals'
   | 'agent_frameworks'
@@ -19,6 +21,13 @@ export type Recommendation =
   | 'no_hire'
   | 'strong_no_hire';
 
+export interface CandidateProfile {
+  tech_stack: string[];
+  years_of_experience: number | null;
+  project_highlights: string[];
+  suggested_focus_areas: string[];
+}
+
 export interface Interview {
   id: number;
   telegram_user_id: string;
@@ -28,6 +37,8 @@ export interface Interview {
   scheduled_time: number;
   duration_minutes: number;
   status: InterviewStatus;
+  interview_phase: InterviewPhase;
+  candidate_profile: CandidateProfile | null;
   research_notes: ResearchNotes | null;
   interview_questions: Question[] | null;
   conversation_history: ConversationMessage[] | null;

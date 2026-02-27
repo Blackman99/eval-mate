@@ -294,17 +294,17 @@
     <div class="demo-body">
       <div class="bubble bot">
         <div class="label" data-i18n="demo_name">面试助手</div>
-        <span data-i18n="demo_msg1">您好，张三！您的面试时间到了。<br/>本次面试时长约 45 分钟，请回复任意内容开始。</span>
+        <span data-i18n="demo_msg1">您好，张三！我是本次面试的面试官。<br/>本次面试针对「AI Agent 管理员」岗位，时长约 45 分钟。<br/>首先，请您做一段自我介绍吧。</span>
       </div>
-      <div class="bubble user" data-i18n="demo_reply1">好的，我准备好了</div>
+      <div class="bubble user" data-i18n="demo_reply1">我有 3 年 AI 相关经验，熟悉 LangChain 和 RAG 架构，之前负责过一个多 Agent 协作平台...</div>
       <div class="bubble bot">
         <div class="label" data-i18n="demo_name">面试助手</div>
-        <span data-i18n="demo_msg2">很好！第一题：请解释 RAG 的工作原理，以及在什么场景下会选择使用它？</span>
+        <span data-i18n="demo_msg2">感谢您的介绍！看到您有 LangChain 和多 Agent 平台的经验，非常好。<br/>接下来我们开始正式面试。第一题：请结合您的实践，谈谈 Agent 的 ReAct 模式是如何工作的？</span>
       </div>
-      <div class="bubble user" data-i18n="demo_reply2">RAG 是检索增强生成，通过向量数据库...</div>
+      <div class="bubble user" data-i18n="demo_reply2">ReAct 模式是将推理和行动交替进行...</div>
       <div class="bubble bot">
         <div class="label" data-i18n="demo_name">面试助手</div>
-        <span data-i18n="demo_msg3">回答不错！追问：如何评估 RAG 系统的检索质量？</span>
+        <span data-i18n="demo_msg3">回答不错！追问：在您的多 Agent 平台中，是如何处理 Agent 之间的协作和冲突的？</span>
       </div>
     </div>
   </div>
@@ -347,6 +347,11 @@
         <h3 data-i18n="feat6_h">身份验证</h3>
         <p data-i18n="feat6_p">通过 Telegram 用户名绑定候选人，确保只有指定候选人可参与面试。</p>
       </div>
+      <div class="feature-card">
+        <div class="feature-icon">🙋</div>
+        <h3 data-i18n="feat7_h">智能自我介绍分析</h3>
+        <p data-i18n="feat7_p">面试开始前收集候选人自我介绍，AI 自动提取技术栈和经验，动态调整后续提问方向与深度。</p>
+      </div>
     </div>
   </div>
 </section>
@@ -355,7 +360,7 @@
 <section id="flow">
   <div class="container">
     <div class="section-label" data-i18n="flow_label">工作流程</div>
-    <h2 class="section-title" data-i18n="flow_title">六步完成一场面试</h2>
+    <h2 class="section-title" data-i18n="flow_title">七步完成一场面试</h2>
     <p class="section-sub" data-i18n="flow_sub">面试官只需完成第一步，其余由系统自动推进。</p>
     <div class="flow-steps">
       <div class="flow-step">
@@ -389,15 +394,22 @@
       <div class="flow-step">
         <div class="step-num">5</div>
         <div class="step-content">
-          <h3 data-i18n="flow5_h">AI 主持面试</h3>
-          <p data-i18n="flow5_p">Claude 按题目顺序提问，根据回答动态追问，全程对话式进行。</p>
+          <h3 data-i18n="flow5_h">自我介绍与背景分析</h3>
+          <p data-i18n="flow5_p">AI 自动请候选人做自我介绍，分析技术栈、经验年限和项目亮点，动态调整后续提问策略。</p>
         </div>
       </div>
       <div class="flow-step">
         <div class="step-num">6</div>
         <div class="step-content">
-          <h3 data-i18n="flow6_h">生成评估报告</h3>
-          <p data-i18n="flow6_p">面试结束后自动生成报告，含综合评分、各维度分析和录用建议，发送给面试官。</p>
+          <h3 data-i18n="flow6_h">AI 主持面试</h3>
+          <p data-i18n="flow6_p">根据候选人背景定制提问，动态追问，全程对话式进行。</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">7</div>
+        <div class="step-content">
+          <h3 data-i18n="flow7_h">生成评估报告</h3>
+          <p data-i18n="flow7_p">面试结束后自动生成报告，含综合评分、各维度分析和录用建议，发送给面试官。</p>
         </div>
       </div>
     </div>
@@ -560,11 +572,11 @@ const LANG = {
     hero_sub: '专为招聘「AI Agent 管理员」岗位设计。从预约到评估报告，全程 AI 驱动，无需人工介入。',
     hero_cta_deploy: '快速部署', hero_cta_source: '查看源码',
     demo_name: '面试助手', demo_status: '● 在线',
-    demo_msg1: '您好，张三！您的面试时间到了。<br/>本次面试时长约 45 分钟，请回复任意内容开始。',
-    demo_reply1: '好的，我准备好了',
-    demo_msg2: '很好！第一题：请解释 RAG 的工作原理，以及在什么场景下会选择使用它？',
-    demo_reply2: 'RAG 是检索增强生成，通过向量数据库...',
-    demo_msg3: '回答不错！追问：如何评估 RAG 系统的检索质量？',
+    demo_msg1: '您好，张三！我是本次面试的面试官。<br/>本次面试针对「AI Agent 管理员」岗位，时长约 45 分钟。<br/>首先，请您做一段自我介绍吧。',
+    demo_reply1: '我有 3 年 AI 相关经验，熟悉 LangChain 和 RAG 架构，之前负责过一个多 Agent 协作平台...',
+    demo_msg2: '感谢您的介绍！看到您有 LangChain 和多 Agent 平台的经验，非常好。<br/>接下来我们开始正式面试。第一题：请结合您的实践，谈谈 Agent 的 ReAct 模式是如何工作的？',
+    demo_reply2: 'ReAct 模式是将推理和行动交替进行...',
+    demo_msg3: '回答不错！追问：在您的多 Agent 平台中，是如何处理 Agent 之间的协作和冲突的？',
     feat_label: '核心功能', feat_title: '从预约到报告，全自动', feat_sub: '面试官只需预约一次，其余全部交给 AI。',
     feat1_h: '自然语言预约', feat1_p: '直接描述面试信息，Claude 自动提取候选人、时间、时长，无需填表单。',
     feat2_h: '自动资料收集', feat2_p: '面试前 2 小时，机器人搜索 AI Agent 领域最新动态，生成定制化题目。',
@@ -572,13 +584,15 @@ const LANG = {
     feat4_h: '智能评估报告', feat4_p: '面试结束后自动生成结构化报告，含各维度评分和录用建议。',
     feat5_h: '自动提醒通知', feat5_p: '面试前 15 分钟提醒候选人，到时间自动发起面试，无需手动操作。',
     feat6_h: '身份验证', feat6_p: '通过 Telegram 用户名绑定候选人，确保只有指定候选人可参与面试。',
-    flow_label: '工作流程', flow_title: '六步完成一场面试', flow_sub: '面试官只需完成第一步，其余由系统自动推进。',
+    feat7_h: '智能自我介绍分析', feat7_p: '面试开始前收集候选人自我介绍，AI 自动提取技术栈和经验，动态调整后续提问方向与深度。',
+    flow_label: '工作流程', flow_title: '七步完成一场面试', flow_sub: '面试官只需完成第一步，其余由系统自动推进。',
     flow1_h: '面试官预约', flow1_p: '发送 <code>/schedule 张三 @zhangsan，明天下午3点，45分钟</code>，Claude 解析并确认。',
     flow2_h: '自动资料收集', flow2_p: '面试前 2 小时，系统搜索 AI Agent 领域最新资料，生成针对性面试题目。',
     flow3_h: '提醒候选人', flow3_p: '面试前 15 分钟自动发送提醒，到时间发送开始通知。',
     flow4_h: '候选人开始面试', flow4_p: '候选人回复任意内容或发送 <code>/begin</code>，面试正式开始。',
-    flow5_h: 'AI 主持面试', flow5_p: 'Claude 按题目顺序提问，根据回答动态追问，全程对话式进行。',
-    flow6_h: '生成评估报告', flow6_p: '面试结束后自动生成报告，含综合评分、各维度分析和录用建议，发送给面试官。',
+    flow5_h: '自我介绍与背景分析', flow5_p: 'AI 自动请候选人做自我介绍，分析技术栈、经验年限和项目亮点，动态调整后续提问策略。',
+    flow6_h: 'AI 主持面试', flow6_p: '根据候选人背景定制提问，动态追问，全程对话式进行。',
+    flow7_h: '生成评估报告', flow7_p: '面试结束后自动生成报告，含综合评分、各维度分析和录用建议，发送给面试官。',
     dim_label: '面试维度', dim_title: '四个维度，全面评估', dim_sub: '针对 AI Agent 管理员岗位设计，覆盖技术与业务能力。',
     dim1_tag: 'AI 基础知识', dim1_h: 'LLM 与 AI 原理', dim1_p: '模型原理、Prompt 工程、RAG、幻觉处理、微调方法（LoRA、RLHF）',
     dim2_tag: 'Agent 框架', dim2_h: '框架实践经验', dim2_p: 'LangChain、AutoGen、CrewAI、Claude SDK、LlamaIndex 等框架的实际使用经验',
@@ -602,11 +616,11 @@ const LANG = {
     hero_sub: 'Built for hiring AI Agent Administrators. From scheduling to evaluation report — fully automated, no human intervention needed.',
     hero_cta_deploy: 'Quick Setup', hero_cta_source: 'View Source',
     demo_name: 'Interview Bot', demo_status: '● Online',
-    demo_msg1: 'Hi John! Your interview is starting now.<br/>This session is ~45 minutes. Reply anything to begin.',
-    demo_reply1: "I'm ready, let's go!",
-    demo_msg2: 'Great! Q1: Explain how RAG works and when you would choose to use it.',
-    demo_reply2: 'RAG is Retrieval-Augmented Generation, using a vector database...',
-    demo_msg3: 'Good answer! Follow-up: How do you evaluate retrieval quality in a RAG system?',
+    demo_msg1: 'Hi John! I\'m your interviewer today.<br/>This interview is for the AI Agent Administrator role, ~45 minutes.<br/>Let\'s start with a self-introduction — tell me about your background and experience.',
+    demo_reply1: "I have 3 years of AI experience, familiar with LangChain and RAG architecture, previously led a multi-Agent collaboration platform...",
+    demo_msg2: 'Thanks for the introduction! Great to see your LangChain and multi-Agent experience.<br/>Let\'s begin the formal interview. Q1: Based on your practice, how does the ReAct pattern work in Agents?',
+    demo_reply2: 'The ReAct pattern alternates between reasoning and action...',
+    demo_msg3: 'Good answer! Follow-up: In your multi-Agent platform, how did you handle collaboration and conflicts between Agents?',
     feat_label: 'Features', feat_title: 'Fully automated, end to end', feat_sub: 'Schedule once — the bot handles everything else.',
     feat1_h: 'Natural Language Scheduling', feat1_p: 'Describe the interview in plain text. Claude extracts candidate, time, and duration automatically.',
     feat2_h: 'Automated Research', feat2_p: '2 hours before the interview, the bot searches for the latest AI Agent trends and generates tailored questions.',
@@ -614,13 +628,15 @@ const LANG = {
     feat4_h: 'Smart Evaluation Report', feat4_p: 'A structured report with per-dimension scores and a hire/no-hire recommendation is sent to the interviewer.',
     feat5_h: 'Reminders & Notifications', feat5_p: 'Candidate is reminded 15 minutes before, and notified automatically when it\'s time to start.',
     feat6_h: 'Identity Verification', feat6_p: 'Candidates are bound by Telegram username — only the designated candidate can participate.',
-    flow_label: 'How It Works', flow_title: '6 Steps to Complete an Interview', flow_sub: 'The interviewer only handles step 1. The rest is automatic.',
+    feat7_h: 'Smart Self-Introduction Analysis', feat7_p: 'Collects candidate self-introduction before the interview. AI extracts tech stack and experience to dynamically adjust question focus and depth.',
+    flow_label: 'How It Works', flow_title: '7 Steps to Complete an Interview', flow_sub: 'The interviewer only handles step 1. The rest is automatic.',
     flow1_h: 'Interviewer Schedules', flow1_p: 'Send <code>/schedule John @john, tomorrow 3pm, 45 minutes</code> — Claude parses and confirms.',
     flow2_h: 'Automated Research', flow2_p: '2 hours before, the system searches for the latest AI Agent resources and generates targeted questions.',
     flow3_h: 'Candidate Reminder', flow3_p: 'A reminder is sent 15 minutes before. A start notification is sent when it\'s time.',
     flow4_h: 'Candidate Starts', flow4_p: 'The candidate replies to any message or sends <code>/begin</code> to start the interview.',
-    flow5_h: 'AI Conducts Interview', flow5_p: 'Claude asks questions in order, follows up based on answers, and adapts dynamically.',
-    flow6_h: 'Evaluation Report Generated', flow6_p: 'After the interview, a report with overall score, per-dimension analysis, and hire recommendation is sent to the interviewer.',
+    flow5_h: 'Self-Introduction & Background Analysis', flow5_p: 'AI asks the candidate for a self-introduction, analyzes tech stack, experience, and project highlights to tailor the questioning strategy.',
+    flow6_h: 'AI Conducts Interview', flow6_p: 'Questions are tailored to the candidate\'s background, with dynamic follow-ups throughout.',
+    flow7_h: 'Evaluation Report Generated', flow7_p: 'After the interview, a report with overall score, per-dimension analysis, and hire recommendation is sent to the interviewer.',
     dim_label: 'Interview Dimensions', dim_title: '4 Dimensions, Comprehensive Evaluation', dim_sub: 'Designed for the AI Agent Administrator role — covering both technical and business skills.',
     dim1_tag: 'AI Fundamentals', dim1_h: 'LLM & AI Principles', dim1_p: 'Model principles, prompt engineering, RAG, hallucination mitigation, fine-tuning (LoRA, RLHF)',
     dim2_tag: 'Agent Frameworks', dim2_h: 'Framework Experience', dim2_p: 'Hands-on experience with LangChain, AutoGen, CrewAI, Claude SDK, LlamaIndex, and more',

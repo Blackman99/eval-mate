@@ -13,6 +13,7 @@ Interviewers schedule interviews once — the bot handles everything else: resea
 - **Fully automated interview** — the candidate chats with the bot on Telegram; the bot asks questions, follows up dynamically, and adapts in real time
 - **Smart evaluation report** — after the interview, a structured report with per-dimension scores and a hire/no-hire recommendation is sent to the interviewer
 - **Reminders & notifications** — candidate is reminded 15 minutes before, and notified automatically when it's time to start
+- **Smart self-introduction analysis** — before the interview begins, the bot collects a self-introduction from the candidate, extracts tech stack and experience via AI, and dynamically adjusts question focus and depth
 
 ## Interview Dimensions
 
@@ -94,7 +95,8 @@ The system will automatically collect research and generate questions 2 hours be
 1. Send `/start` to the bot first — required so the bot can reach you proactively
 2. The bot will notify you when it's time for your interview
 3. You can also send `/begin` after the scheduled time to start immediately
-4. Just reply in the chat to answer questions
+4. The bot will ask for a self-introduction first — your background helps tailor the questions
+5. Just reply in the chat to answer questions
 
 ## Architecture
 
@@ -107,7 +109,7 @@ src/
 ├── parser.ts       # Natural language parsing (extract scheduling info)
 ├── db.ts           # SQLite persistence (sql.js)
 ├── config.ts       # Environment variable config
-└── types.ts        # TypeScript type definitions
+└── types.ts        # TypeScript type definitions (InterviewPhase, CandidateProfile, etc.)
 ```
 
 **Stack:**
@@ -121,8 +123,8 @@ src/
 ## Interview Status Flow
 
 ```
-pending → researching → ready → notified → in_progress → completed
-                                                        ↘ cancelled
+pending → researching → ready → notified → intro → in_progress → completed
+                                                                ↘ cancelled
 ```
 
 | Status | Description |
@@ -131,7 +133,8 @@ pending → researching → ready → notified → in_progress → completed
 | `researching` | Collecting research and generating questions |
 | `ready` | Questions ready, waiting for interview time |
 | `notified` | Candidate notified, waiting for them to start |
-| `in_progress` | Interview in progress |
+| `intro` | Collecting candidate self-introduction and analyzing background |
+| `in_progress` | Interview in progress (questions tailored to candidate's profile) |
 | `completed` | Interview finished, report sent |
 | `cancelled` | Cancelled |
 

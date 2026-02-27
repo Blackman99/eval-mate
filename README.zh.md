@@ -13,6 +13,7 @@
 - **全程自动面试**：候选人通过 Telegram 与机器人对话完成面试，支持追问和动态调整
 - **智能评估报告**：面试结束后自动生成结构化评估报告，包含各维度评分和录用建议，发送给面试官
 - **候选人提醒**：面试前 15 分钟自动提醒候选人，到时间自动发起面试通知
+- **智能自我介绍分析**：面试开始前收集候选人自我介绍，AI 自动提取技术栈和经验背景，动态调整后续提问方向与深度
 
 ## 面试维度
 
@@ -96,7 +97,8 @@ npm run build && npm start
 1. 向机器人发送 `/start` 完成注册（必须，否则机器人无法主动联系）
 2. 到预约时间后，机器人会主动发送面试通知
 3. 也可在预约时间后主动发送 `/begin` 开始面试
-4. 直接在对话框回复问题即可完成面试
+4. 机器人会先请你做自我介绍——你的背景信息将帮助 AI 定制后续问题
+5. 直接在对话框回复问题即可完成面试
 
 ## 技术架构
 
@@ -109,7 +111,7 @@ src/
 ├── parser.ts       # 自然语言解析（提取面试信息）
 ├── db.ts           # SQLite 数据持久化（sql.js）
 ├── config.ts       # 环境变量配置
-└── types.ts        # TypeScript 类型定义
+└── types.ts        # TypeScript 类型定义（InterviewPhase、CandidateProfile 等）
 ```
 
 **技术栈：**
@@ -123,8 +125,8 @@ src/
 ## 面试状态流转
 
 ```
-pending → researching → ready → notified → in_progress → completed
-                                                        ↘ cancelled
+pending → researching → ready → notified → intro → in_progress → completed
+                                                                ↘ cancelled
 ```
 
 | 状态 | 说明 |
@@ -133,7 +135,8 @@ pending → researching → ready → notified → in_progress → completed
 | `researching` | 正在收集资料、生成题目 |
 | `ready` | 题目已就绪，等待面试时间 |
 | `notified` | 已通知候选人，等待候选人确认开始 |
-| `in_progress` | 面试进行中 |
+| `intro` | 收集候选人自我介绍，分析背景信息 |
+| `in_progress` | 面试进行中（根据候选人背景定制提问） |
 | `completed` | 面试结束，报告已发送 |
 | `cancelled` | 已取消 |
 
