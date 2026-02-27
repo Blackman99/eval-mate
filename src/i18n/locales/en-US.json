@@ -39,7 +39,10 @@
   },
   "interview": {
     "ending": "⏳ Interview finished. Generating evaluation report, please wait...",
-    "reply_error": "Sorry, an error occurred while processing your reply. Please try again later."
+    "reply_error": "Sorry, an error occurred while processing your reply. Please try again later.",
+    "intro_prompt": "Please introduce yourself, including your technical background, work experience, and projects you have worked on.",
+    "intro_received": "Thank you for the introduction! Let's move on to the formal interview.",
+    "analyzing": "Analyzing your self-introduction..."
   },
   "default_reply": "Use /schedule to book an interview, or /help for help.",
   "wizard": {

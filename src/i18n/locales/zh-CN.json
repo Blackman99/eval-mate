@@ -39,7 +39,10 @@
   },
   "interview": {
     "ending": "⏳ 面试已结束，正在生成评估报告，请稍候...",
-    "reply_error": "抱歉，处理您的回复时遇到了问题，请稍后再试。"
+    "reply_error": "抱歉，处理您的回复时遇到了问题，请稍后再试。",
+    "intro_prompt": "请做一段自我介绍，包括您的技术背景、工作经验、参与过的项目等。",
+    "intro_received": "感谢您的介绍！接下来我们开始正式面试环节。",
+    "analyzing": "正在分析您的自我介绍..."
   },
   "default_reply": "请使用 /schedule 预约面试，或 /help 查看帮助。",
   "wizard": {

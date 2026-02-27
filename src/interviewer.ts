@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { config } from './config.js';
-import { get_interview, append_message, get_conversation } from './db.js';
-import type { Interview, InterviewSummary, InterviewCategory } from './types.js';
+import { get_interview, append_message, get_conversation, set_interview_phase, set_candidate_profile } from './db.js';
+import type { Interview, InterviewSummary, InterviewCategory, CandidateProfile } from './types.js';
 
 const client = new Anthropic({ apiKey: config.anthropic.api_key, baseURL: config.anthropic.base_url });
 
@@ -18,6 +18,33 @@ function build_interviewer_system_prompt(interview: Interview, time_remaining_ms
     ? `研究背景：\n${interview.research_notes.summary}`
     : '';
 
+  if (interview.interview_phase === 'intro') {
+    return `你是一位专业的技术面试官，正在对候选人进行"AI Agent 管理员"职位的面试。
+
+候选人姓名：${interview.candidate_name}
+面试时长：${interview.duration_minutes} 分钟
+${time_info}
+
+${research_text}
+
+面试指导原则：
+1. 保持专业、友好、鼓励的态度
+2. 全程使用中文交流
+3. 不要透露评分标准，不要主动说明你是 AI（除非被直接询问）
+
+面试开始时，先做简短的自我介绍，说明本次面试的职位和大致流程，然后请候选人做自我介绍（介绍自己的背景、技术栈、工作经验、项目经历等）。`;
+  }
+
+  const profile_text = interview.candidate_profile
+    ? `候选人背景（从自我介绍中提取）：
+- 技术栈：${interview.candidate_profile.tech_stack.join('、') || '未提及'}
+- 经验年限：${interview.candidate_profile.years_of_experience !== null ? `约 ${interview.candidate_profile.years_of_experience} 年` : '未明确'}
+- 项目亮点：${interview.candidate_profile.project_highlights.join('；') || '未提及'}
+- 建议重点考察方向：${interview.candidate_profile.suggested_focus_areas.join('、') || '按标准流程'}
+
+请根据候选人背景调整提问深度和方向。例如：候选人提到有 LangChain 经验，则在 agent_frameworks 维度深入考察 LangChain 的具体使用；候选人经验年限较浅，则适当降低难度；候选人有丰富的系统运维经验，则在 system_operations 维度深入考察。`
+    : '';
+
   return `你是一位专业的技术面试官，正在对候选人进行"AI Agent 管理员"职位的面试。
 
 候选人姓名：${interview.candidate_name}
@@ -25,6 +52,8 @@ function build_interviewer_system_prompt(interview: Interview, time_remaining_ms
 ${time_info}
 
 ${research_text}
+
+${profile_text}
 
 准备好的面试题目：
 ${questions_text}
@@ -37,9 +66,7 @@ ${questions_text}
 5. 时间不足5分钟时，礼貌地进行收尾
 6. 面试结束时，在回复末尾单独一行写 INTERVIEW_COMPLETE
 7. 全程使用中文交流
-8. 不要透露评分标准，不要主动说明你是 AI（除非被直接询问）
-
-面试开始时，先做自我介绍并说明面试流程，然后从 AI 基础知识开始提问。`;
+8. 不要透露评分标准，不要主动说明你是 AI（除非被直接询问）`;
 }
 
 const SUMMARY_SYSTEM_PROMPT = `你是一位资深技术招聘官，负责分析 AI Agent 管理员职位的面试结果。
@@ -77,6 +104,26 @@ export async function handle_candidate_reply(
   const interview = get_interview(interview_id);
   if (!interview) throw new Error(`Interview ${interview_id} not found`);
 
+  // If still in intro phase, analyze the self-introduction and transition
+  if (interview.interview_phase === 'intro') {
+    const profile = await analyze_self_introduction(interview_id, candidate_message);
+    set_candidate_profile(interview_id, profile);
+    set_interview_phase(interview_id, 'questioning');
+
+    // Reload interview with updated phase and profile
+    const updated_interview = get_interview(interview_id);
+    if (!updated_interview) throw new Error(`Interview ${interview_id} not found`);
+
+    const elapsed_ms = Date.now() - updated_interview.scheduled_time;
+    const time_remaining_ms = updated_interview.duration_minutes * 60_000 - elapsed_ms;
+
+    const response = await generate_interviewer_turn(updated_interview, time_remaining_ms);
+    append_message(interview_id, 'assistant', response);
+
+    const should_end = response.includes('INTERVIEW_COMPLETE') || time_remaining_ms <= 0;
+    return { response: response.replace('INTERVIEW_COMPLETE', '').trim(), should_end };
+  }
+
   const elapsed_ms = Date.now() - interview.scheduled_time;
   const time_remaining_ms = interview.duration_minutes * 60_000 - elapsed_ms;
 
@@ -85,6 +132,53 @@ export async function handle_candidate_reply(
 
   const should_end = response.includes('INTERVIEW_COMPLETE') || time_remaining_ms <= 0;
   return { response: response.replace('INTERVIEW_COMPLETE', '').trim(), should_end };
+}
+
+async function analyze_self_introduction(interview_id: number, intro_text: string): Promise<CandidateProfile> {
+  const response = await client.messages.create({
+    model: config.anthropic.model,
+    max_tokens: 1000,
+    system: `你是一位专业的技术招聘分析师。请从候选人的自我介绍中提取关键信息，输出严格的 JSON 格式，不包含任何其他文字。`,
+    messages: [{
+      role: 'user',
+      content: `请分析以下自我介绍，提取关键信息：
+
+${intro_text}
+
+请输出如下 JSON 格式：
+{
+  "tech_stack": ["技术1", "技术2"],
+  "years_of_experience": 数字或null,
+  "project_highlights": ["项目亮点1", "项目亮点2"],
+  "suggested_focus_areas": ["建议重点考察方向1", "方向2"]
+}
+
+说明：
+- tech_stack：候选人提到的所有技术、框架、工具
+- years_of_experience：从描述中估算的工作年限（整数），无法判断则为 null
+- project_highlights：候选人提到的值得深入了解的项目或经历（简短描述）
+- suggested_focus_areas：根据候选人背景，建议在面试中重点考察的方向（结合 AI基础知识、Agent框架经验、系统运维、业务沟通四个维度）`,
+    }],
+  });
+
+  const text_blocks = (response.content ?? []).filter(b => b.type === 'text');
+  const full_text = text_blocks.map(b => (b as Anthropic.TextBlock).text).join('\n');
+
+  const json_match = full_text.match(/\{[\s\S]*"tech_stack"[\s\S]*\}/);
+  if (json_match) {
+    try {
+      return JSON.parse(json_match[0]) as CandidateProfile;
+    } catch {
+      // fall through to default
+    }
+  }
+
+  return {
+    tech_stack: [],
+    years_of_experience: null,
+    project_highlights: [],
+    suggested_focus_areas: [],
+  };
 }
 
 async function generate_interviewer_turn(
@@ -100,10 +194,10 @@ async function generate_interviewer_turn(
 
   // First turn: inject a trigger message
   if (messages.length === 0) {
-    messages.push({
-      role: 'user',
-      content: '[系统提示：面试时间到，请开始面试。发送开场白并介绍面试流程。]',
-    });
+    const trigger = interview.interview_phase === 'intro'
+      ? '[系统提示：面试时间到，请开始面试。做简短自我介绍，说明面试职位和流程，然后请候选人做自我介绍。]'
+      : '[系统提示：候选人已完成自我介绍，请根据候选人背景开始正式提问。先简短过渡（如"感谢您的介绍，接下来我们开始正式面试"），然后从第一个问题开始。]';
+    messages.push({ role: 'user', content: trigger });
   }
 
   let full_response = '';

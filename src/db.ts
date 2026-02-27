@@ -4,6 +4,8 @@ import { config } from './config.js';
 import type {
   Interview,
   InterviewStatus,
+  InterviewPhase,
+  CandidateProfile,
   ResearchNotes,
   Question,
   ConversationMessage,
@@ -71,6 +73,9 @@ export async function init_db(): Promise<void> {
   try { _db.run("ALTER TABLE interviews ADD COLUMN candidate_telegram_id TEXT NOT NULL DEFAULT ''"); } catch { /* already exists */ }
   // Migration: create user_prefs table for existing databases
   try { _db.run("CREATE TABLE IF NOT EXISTS user_prefs (chat_id TEXT PRIMARY KEY, language TEXT NOT NULL DEFAULT 'zh-CN')"); } catch { /* already exists */ }
+  // Migration: add interview phase and candidate profile columns
+  try { _db.run("ALTER TABLE interviews ADD COLUMN interview_phase TEXT NOT NULL DEFAULT 'intro'"); } catch { /* already exists */ }
+  try { _db.run("ALTER TABLE interviews ADD COLUMN candidate_profile TEXT"); } catch { /* already exists */ }
   persist();
 }
 
@@ -122,6 +127,8 @@ function parse_interview(row: Record<string, unknown>): Interview {
     scheduled_time: row.scheduled_time as number,
     duration_minutes: row.duration_minutes as number,
     status: row.status as InterviewStatus,
+    interview_phase: ((row.interview_phase as string) ?? 'intro') as InterviewPhase,
+    candidate_profile: row.candidate_profile ? JSON.parse(row.candidate_profile as string) : null,
     research_notes: row.research_notes ? JSON.parse(row.research_notes as string) : null,
     interview_questions: row.interview_questions ? JSON.parse(row.interview_questions as string) : null,
     conversation_history: row.conversation_history ? JSON.parse(row.conversation_history as string) : null,
@@ -270,6 +277,19 @@ export function get_interview_by_candidate_username(username: string): Interview
 
 export function set_candidate_telegram_id(id: number, candidate_telegram_id: string): void {
   run('UPDATE interviews SET candidate_telegram_id = ?, updated_at = ? WHERE id = ?', [candidate_telegram_id, Date.now(), id]);
+}
+
+export function set_interview_phase(id: number, phase: InterviewPhase): void {
+  run('UPDATE interviews SET interview_phase = ?, updated_at = ? WHERE id = ?', [phase, Date.now(), id]);
+}
+
+export function set_candidate_profile(id: number, profile: CandidateProfile): void {
+  run('UPDATE interviews SET candidate_profile = ?, updated_at = ? WHERE id = ?', [JSON.stringify(profile), Date.now(), id]);
+}
+
+export function get_candidate_profile(id: number): CandidateProfile | null {
+  const interview = get_interview(id);
+  return interview?.candidate_profile ?? null;
 }
 
 // ─── User language preferences ────────────────────────────────────────────────
